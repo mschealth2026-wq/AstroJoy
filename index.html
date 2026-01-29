@@ -3,20 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AstroHouse Pro + Exaltations</title>
+    <title>AstroHouse Pro: Affinities</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; }
-        .house-card { background: #1e293b; border: 1px solid #334155; transition: 0.3s; }
+        .house-card { background: #1e293b; border: 1px solid #334155; transition: 0.3s; height: 100%; }
         .house-card:hover { border-color: #38bdf8; }
-        .exalted-badge { background: #0369a1; color: #7dd3fc; font-size: 0.7rem; padding: 2px 8px; border-radius: 99px; margin-top: 8px; display: inline-block; border: 1px solid #0ea5e9; }
+        .tag { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
+        .tag-friend { background: #065f46; color: #34d399; }
+        .tag-enemy { background: #7f1d1d; color: #f87171; }
+        .exalted-badge { background: #0369a1; color: #7dd3fc; font-size: 0.7rem; padding: 4px 10px; border-radius: 99px; margin-top: 12px; display: inline-block; border: 1px solid #0ea5e9; font-weight: bold; }
     </style>
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-6xl mx-auto">
         <header class="text-center mb-10">
-            <h1 class="text-4xl font-bold text-sky-400 mb-2">AstroHouse Intelligence</h1>
-            <p class="text-slate-400">House placements, Ruling Lords, and Exaltation points.</p>
+            <h1 class="text-4xl font-bold text-sky-400 mb-2">AstroHouse Pro</h1>
+            <p class="text-slate-400 font-medium">Full House Analysis: Lords, Importance, and Planetary Affinities</p>
         </header>
 
         <div class="flex flex-col md:flex-row gap-4 mb-10 justify-center">
@@ -34,11 +37,10 @@
                 <option value="Aquarius">Aquarius</option>
                 <option value="Pisces">Pisces</option>
             </select>
-            <button onclick="generateChart()" class="bg-sky-600 hover:bg-sky-500 px-8 py-3 rounded-lg font-bold transition">Generate Chart</button>
+            <button onclick="generateChart()" class="bg-sky-600 hover:bg-sky-500 px-8 py-3 rounded-lg font-bold transition">Analyze Chart</button>
         </div>
 
-        <div id="chartDisplay" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            </div>
+        <div id="chartDisplay" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </div>
 
     <script>
@@ -57,19 +59,29 @@
             { sign: "Pisces", lord: "Jupiter", exalted: "Venus" }
         ];
 
+        const affinities = {
+            "Sun": { friends: "Moon, Mars, Jupiter", enemies: "Venus, Saturn" },
+            "Moon": { friends: "Sun, Mercury", enemies: "None" },
+            "Mars": { friends: "Sun, Moon, Jupiter", enemies: "Mercury" },
+            "Mercury": { friends: "Sun, Venus", enemies: "Moon" },
+            "Jupiter": { friends: "Sun, Moon, Mars", enemies: "Mercury, Venus" },
+            "Venus": { friends: "Mercury, Saturn", enemies: "Sun, Moon" },
+            "Saturn": { friends: "Mercury, Venus", enemies: "Sun, Moon, Mars" }
+        };
+
         const houseImportance = {
-            1: "Physical body, appearance, and soul's purpose.",
-            2: "Wealth, speech, family, and fixed assets.",
-            3: "Siblings, courage, communication, and short travels.",
-            4: "Mother, home, happiness, and property.",
-            5: "Creativity, children, romance, and past life merits.",
-            6: "Health, debts, enemies, and daily service.",
-            7: "Partnerships, marriage, and public dealings.",
-            8: "Longevity, secrets, transformations, and inheritance.",
-            9: "Fortune, higher learning, father, and religion.",
-            10: "Career, status, fame, and public action.",
-            11: "Gains, friendships, and fulfillment of desires.",
-            12: "Spiritual liberation, losses, isolation, and foreign lands."
+            1: "Personality, health, and life path.",
+            2: "Family, wealth, and speech.",
+            3: "Efforts, siblings, and communication.",
+            4: "Happiness, mother, and assets.",
+            5: "Intellect, children, and past luck.",
+            6: "Hard work, health, and challenges.",
+            7: "Marriage and partnerships.",
+            8: "Transformation and longevity.",
+            9: "Wisdom, fortune, and travel.",
+            10: "Career, fame, and status.",
+            11: "Gains and social networks.",
+            12: "Expenses and spiritual growth."
         };
 
         function generateChart() {
@@ -80,22 +92,34 @@
 
             for (let i = 0; i < 12; i++) {
                 const houseNum = i + 1;
-                const currentSignData = zodiacData[(startIndex + i) % 12];
-                const significance = houseImportance[houseNum];
+                const signInfo = zodiacData[(startIndex + i) % 12];
+                const lord = signInfo.lord;
+                const affinity = affinities[lord] || { friends: "N/A", enemies: "N/A" };
                 
-                let exaltationHTML = currentSignData.exalted !== "None" 
-                    ? `<div class="exalted-badge">✨ ${currentSignData.exalted} is Exalted here</div>` 
+                let exaltationHTML = signInfo.exalted !== "None" 
+                    ? `<div class="exalted-badge">✨ Exalted: ${signInfo.exalted}</div>` 
                     : "";
 
                 display.innerHTML += `
                     <div class="house-card p-6 rounded-xl flex flex-col justify-between">
                         <div>
-                            <div class="flex justify-between items-start">
-                                <span class="text-sky-500 text-xs font-bold uppercase tracking-wider">House ${houseNum}</span>
-                                <span class="text-slate-500 text-xs italic">${currentSignData.sign}</span>
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="text-sky-500 font-black text-lg">H${houseNum}</span>
+                                <span class="bg-slate-700 px-3 py-1 rounded text-xs font-bold">${signInfo.sign}</span>
                             </div>
-                            <h3 class="text-xl font-bold mt-1 text-white">${currentSignData.lord} <span class="text-slate-500 text-sm font-normal">Rules</span></h3>
-                            <p class="text-slate-400 text-sm mt-3 leading-relaxed">${significance}</p>
+                            <h3 class="text-xl font-bold text-white mb-1">Ruler: ${lord}</h3>
+                            <p class="text-slate-400 text-sm mb-4 italic">"${houseImportance[houseNum]}"</p>
+                            
+                            <div class="space-y-2 border-t border-slate-700 pt-4">
+                                <div class="flex items-center gap-2">
+                                    <span class="tag tag-friend">Friends</span>
+                                    <span class="text-xs text-slate-300">${affinity.friends}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="tag tag-enemy">Enemies</span>
+                                    <span class="text-xs text-slate-300">${affinity.enemies}</span>
+                                </div>
+                            </div>
                         </div>
                         ${exaltationHTML}
                     </div>
