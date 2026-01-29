@@ -3,13 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AstroVision Pro - Fixed Scanner</title>
+    <title>AstroVision AI - Advanced Analyzer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src='https://unpkg.com/tesseract.js@v4.0.1/dist/tesseract.min.js'></script>
     <style>
         body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; }
         .house-card { background: #1e293b; border: 1px solid #334155; }
-        .planet-tag { background: #0369a1; color: #7dd3fc; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin: 2px; display: inline-block; border: 1px solid #0ea5e9; }
+        .planet-row { background: #0f172a; border-radius: 8px; padding: 8px; margin-bottom: 6px; border-left: 3px solid #38bdf8; }
+        .tag { font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+        .tag-friend { background: #065f46; color: #34d399; }
+        .tag-enemy { background: #7f1d1d; color: #f87171; }
+        .tag-neutral { background: #334155; color: #94a3b8; }
+        .age-tag { background: #1e1b4b; color: #818cf8; border: 1px solid #4338ca; }
         .spinner { border: 3px solid rgba(255, 255, 255, 0.1); border-left-color: #38bdf8; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
@@ -18,126 +23,121 @@
     <div class="max-w-6xl mx-auto">
         <header class="text-center mb-8">
             <h1 class="text-4xl font-bold text-sky-400 mb-2">AstroVision Pro</h1>
-            <p class="text-slate-400 italic">Optimized for AstroSage screenshots</p>
+            <p class="text-slate-400">Deep Scan: Planet Age (Avastha) & Affinity</p>
         </header>
 
-        <div class="bg-slate-800 p-8 rounded-2xl border-2 border-dashed border-slate-600 text-center mb-6">
+        <div class="bg-slate-800 p-8 rounded-2xl border-2 border-dashed border-slate-600 text-center mb-8">
             <input type="file" id="chartUpload" accept="image/*" class="hidden">
-            <label for="chartUpload" class="cursor-pointer bg-sky-600 hover:bg-sky-500 px-8 py-4 rounded-xl font-bold transition inline-block text-lg">
-                📷 Scan AstroSage Table
+            <label for="chartUpload" class="cursor-pointer bg-sky-600 hover:bg-sky-500 px-8 py-4 rounded-xl font-bold transition inline-block">
+                ✨ Scan AstroSage Image
             </label>
             <div id="loading" class="hidden mt-6 flex flex-col items-center">
                 <div class="spinner mb-2"></div>
-                <p class="text-sky-400 font-medium">Reading Chart Data...</p>
+                <p class="text-sky-400">Calculating Avasthas & Maitri...</p>
             </div>
         </div>
 
-        <div id="chartDisplay" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10"></div>
-
-        <div class="bg-black/40 p-4 rounded-lg border border-slate-800">
-            <h4 class="text-slate-500 text-xs font-bold uppercase mb-2">AI Vision Log (Debug)</h4>
-            <div id="debugLog" class="text-xs text-slate-400 font-mono h-24 overflow-y-auto">Waiting for upload...</div>
-        </div>
+        <div id="chartDisplay" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </div>
 
     <script>
-        const zodiacData = [
-            { sign: "Aries", abbr: ["ari", "aries"], lord: "Mars" },
-            { sign: "Taurus", abbr: ["tau", "taurus"], lord: "Venus" },
-            { sign: "Gemini", abbr: ["gem", "gemini"], lord: "Mercury" },
-            { sign: "Cancer", abbr: ["can", "cancer"], lord: "Moon" },
-            { sign: "Leo", abbr: ["leo"], lord: "Sun" },
-            { sign: "Virgo", abbr: ["vir", "virgo"], lord: "Mercury" },
-            { sign: "Libra", abbr: ["lib", "libra"], lord: "Venus" },
-            { sign: "Scorpio", lord: "Mars", abbr: ["sco", "scorpio"] },
-            { sign: "Sagittarius", abbr: ["sag", "sagittarius"], lord: "Jupiter" },
-            { sign: "Capricorn", abbr: ["cap", "capricorn"], lord: "Saturn" },
-            { sign: "Aquarius", abbr: ["aqu", "aquarius"], lord: "Saturn" },
-            { sign: "Pisces", abbr: ["pis", "pisces"], lord: "Jupiter" }
+        const zodiac = [
+            { name: "Aries", type: "odd", lord: "Mars" }, { name: "Taurus", type: "even", lord: "Venus" },
+            { name: "Gemini", type: "odd", lord: "Mercury" }, { name: "Cancer", type: "even", lord: "Moon" },
+            { name: "Leo", type: "odd", lord: "Sun" }, { name: "Virgo", type: "even", lord: "Mercury" },
+            { name: "Libra", type: "odd", lord: "Venus" }, { name: "Scorpio", type: "even", lord: "Mars" },
+            { name: "Sagittarius", type: "odd", lord: "Jupiter" }, { name: "Capricorn", type: "even", lord: "Saturn" },
+            { name: "Aquarius", type: "odd", lord: "Saturn" }, { name: "Pisces", type: "even", lord: "Jupiter" }
         ];
 
-        const planets = ["Sun", "Mon", "Mar", "Mer", "Jup", "Ven", "Sat", "Rah", "Ket"];
-
-        const housePurpose = {
-            1: "Identity & Physicality", 2: "Wealth & Family", 3: "Efforts & Skills",
-            4: "Inner Peace & Home", 5: "Intelligence & Luck", 6: "Obstacles & Service",
-            7: "Union & Contracts", 8: "Research & Longevity", 9: "Wisdom & Faith",
-            10: "Action & Career", 11: "Fulfillment & Gains", 12: "Release & Spirituality"
+        const relationships = {
+            "Sun": { friends: ["Moon", "Mars", "Jupiter"], enemies: ["Venus", "Saturn"] },
+            "Moon": { friends: ["Sun", "Mercury"], enemies: [] },
+            "Mars": { friends: ["Sun", "Moon", "Jupiter"], enemies: ["Mercury"] },
+            "Mercury": { friends: ["Sun", "Venus"], enemies: ["Moon"] },
+            "Jupiter": { friends: ["Sun", "Moon", "Mars"], enemies: ["Mercury", "Venus"] },
+            "Venus": { friends: ["Mercury", "Saturn"], enemies: ["Sun", "Moon"] },
+            "Saturn": { friends: ["Mercury", "Venus"], enemies: ["Sun", "Moon", "Mars"] }
         };
+
+        function getAvastha(deg, type) {
+            const d = parseFloat(deg);
+            const stages = ["Infant (25%)", "Adolescent (50%)", "Youth (100%)", "Old Age (Low)", "Dead (0%)"];
+            let idx = Math.floor(d / 6);
+            if (type === "even") idx = 4 - idx; 
+            return stages[idx] || "Youth";
+        }
 
         document.getElementById('chartUpload').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
-            const log = document.getElementById('debugLog');
-            const load = document.getElementById('loading');
-            
-            load.style.display = 'flex';
-            log.innerHTML = "Initializing OCR...";
-
-            try {
-                const { data: { text } } = await Tesseract.recognize(file, 'eng');
-                load.style.display = 'none';
-                const cleanText = text.toLowerCase();
-                log.innerHTML = "AI Detected: " + cleanText.substring(0, 200) + "...";
-                
-                processChart(cleanText);
-            } catch (err) {
-                log.innerHTML = "Error: " + err.message;
-                load.style.display = 'none';
-            }
+            document.getElementById('loading').style.display = 'flex';
+            const { data: { text } } = await Tesseract.recognize(file, 'eng');
+            document.getElementById('loading').style.display = 'none';
+            parseChart(text.toLowerCase());
         });
 
-        function processChart(text) {
-            // Find Lagna specifically
-            let ascSign = null;
-            let lagPos = text.indexOf("lag");
+        function parseChart(rawText) {
+            const text = rawText.replace(/\n/g, " ");
+            const lagMatch = text.match(/lag\D*(\w{3})/);
+            if (!lagMatch) return alert("Lagna not found.");
             
-            if (lagPos !== -1) {
-                let segment = text.substring(lagPos, lagPos + 30);
-                ascSign = zodiacData.find(z => z.abbr.some(a => segment.includes(a)));
-            }
+            const ascSign = zodiac.find(z => z.name.toLowerCase().startsWith(lagMatch[1]));
+            const planetsFound = [];
+            const pKeys = ["sun", "mon", "mar", "mer", "jup", "ven", "sat", "rah", "ket"];
 
-            if (!ascSign) {
-                alert("Could not find Lagna abbreviation. Try manual selection or a clearer crop.");
-                return;
-            }
-
-            // Map Planets
-            let results = {};
-            planets.forEach(p => {
-                let pPos = text.indexOf(p.toLowerCase());
-                if (pPos !== -1) {
-                    let pSeg = text.substring(pPos, pPos + 30);
-                    let foundSign = zodiacData.find(z => z.abbr.some(a => pSeg.includes(a)));
-                    if (foundSign) results[p] = foundSign.sign;
+            pKeys.forEach(p => {
+                const regex = new RegExp(`${p}\\D*(\\w{3})\\s*(\\d+)`, 'g');
+                let match;
+                while ((match = regex.exec(text)) !== null) {
+                    const sign = zodiac.find(z => z.name.toLowerCase().startsWith(match[1]));
+                    if (sign) planetsFound.push({ name: p.toUpperCase(), sign: sign.name, deg: match[2], signType: sign.type });
                 }
             });
 
-            renderHouses(ascSign.sign, results);
+            render(ascSign.name, planetsFound);
         }
 
-        function renderHouses(ascName, planetMap) {
-            const startIdx = zodiacData.findIndex(z => z.sign === ascName);
-            const container = document.getElementById('chartDisplay');
-            container.innerHTML = '';
+        function render(ascName, planetList) {
+            const startIdx = zodiac.findIndex(z => z.name === ascName);
+            const display = document.getElementById('chartDisplay');
+            display.innerHTML = '';
 
             for (let i = 0; i < 12; i++) {
-                const houseNum = i + 1;
-                const sign = zodiacData[(startIdx + i) % 12];
-                const housePlanets = Object.keys(planetMap).filter(k => planetMap[k] === sign.sign);
+                const sign = zodiac[(startIdx + i) % 12];
+                const housePlanets = planetList.filter(p => p.sign === sign.name);
+                
+                let planetsHTML = housePlanets.map(p => {
+                    const rel = relationships[p.name.charAt(0) + p.name.slice(1).toLowerCase()];
+                    let affinity = "Neutral";
+                    if (rel?.friends.includes(sign.lord)) affinity = "Friend's Sign";
+                    if (rel?.enemies.includes(sign.lord)) affinity = "Enemy's Sign";
+                    if (sign.lord === (p.name.charAt(0) + p.name.slice(1).toLowerCase())) affinity = "Own House";
 
-                container.innerHTML += `
+                    const affClass = affinity.includes("Friend") || affinity.includes("Own") ? "tag-friend" : 
+                                   affinity.includes("Enemy") ? "tag-enemy" : "tag-neutral";
+
+                    return `
+                        <div class="planet-row">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-sky-300 text-sm">${p.name}</span>
+                                <span class="tag ${affClass}">${affinity}</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="tag age-tag">${getAvastha(p.deg, p.signType)}</span>
+                                <span class="text-[9px] text-slate-500 self-center">${p.deg}°</span>
+                            </div>
+                        </div>`;
+                }).join('');
+
+                display.innerHTML += `
                     <div class="house-card p-5 rounded-xl border border-slate-700">
-                        <div class="flex justify-between items-center mb-3">
-                            <span class="text-sky-400 font-black">H${houseNum}</span>
-                            <span class="text-[10px] text-slate-500 font-bold uppercase">${sign.sign}</span>
+                        <div class="flex justify-between mb-4">
+                            <span class="text-sky-500 font-bold">House ${i+1}</span>
+                            <span class="text-[10px] bg-slate-800 px-2 py-1 rounded">${sign.name}</span>
                         </div>
-                        <h3 class="text-sm font-bold text-white mb-2">Lord: ${sign.lord}</h3>
-                        <div class="min-h-[40px] mb-3">
-                            ${housePlanets.map(p => `<span class="planet-tag">${p}</span>`).join('') || '<span class="text-slate-600 text-xs">No Planets</span>'}
-                        </div>
-                        <p class="text-[11px] text-slate-400 leading-tight border-t border-slate-800 pt-3 italic">"${housePurpose[houseNum]}"</p>
+                        <div class="space-y-2">${planetsHTML || '<p class="text-slate-600 text-xs italic">No Planets</p>'}</div>
+                        <div class="mt-4 pt-3 border-t border-slate-800 text-[10px] text-slate-400">Lord: ${sign.lord}</div>
                     </div>`;
             }
         }
