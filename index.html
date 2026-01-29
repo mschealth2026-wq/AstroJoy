@@ -3,41 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AstroHouse Pro: Affinities</title>
+    <title>AstroVision AI - Chart Reader</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src='https://unpkg.com/tesseract.js@v4.0.1/dist/tesseract.min.js'></script>
     <style>
         body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; }
-        .house-card { background: #1e293b; border: 1px solid #334155; transition: 0.3s; height: 100%; }
-        .house-card:hover { border-color: #38bdf8; }
-        .tag { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
+        .house-card { background: #1e293b; border: 1px solid #334155; height: 100%; transition: 0.3s; }
         .tag-friend { background: #065f46; color: #34d399; }
         .tag-enemy { background: #7f1d1d; color: #f87171; }
-        .exalted-badge { background: #0369a1; color: #7dd3fc; font-size: 0.7rem; padding: 4px 10px; border-radius: 99px; margin-top: 12px; display: inline-block; border: 1px solid #0ea5e9; font-weight: bold; }
+        #loading { display: none; }
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.1); border-left-color: #38bdf8; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-6xl mx-auto">
-        <header class="text-center mb-10">
-            <h1 class="text-4xl font-bold text-sky-400 mb-2">AstroHouse Pro</h1>
-            <p class="text-slate-400 font-medium">Full House Analysis: Lords, Importance, and Planetary Affinities</p>
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-sky-400 mb-2">AstroVision AI</h1>
+            <p class="text-slate-400">Upload your chart image to extract house placements.</p>
         </header>
 
-        <div class="flex flex-col md:flex-row gap-4 mb-10 justify-center">
-            <select id="ascendantInput" class="bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500 text-white">
-                <option value="Aries">Aries</option>
-                <option value="Taurus">Taurus</option>
-                <option value="Gemini">Gemini</option>
-                <option value="Cancer">Cancer</option>
-                <option value="Leo">Leo</option>
-                <option value="Virgo">Virgo</option>
-                <option value="Libra">Libra</option>
-                <option value="Scorpio">Scorpio</option>
-                <option value="Sagittarius">Sagittarius</option>
-                <option value="Capricorn">Capricorn</option>
-                <option value="Aquarius">Aquarius</option>
-                <option value="Pisces">Pisces</option>
-            </select>
-            <button onclick="generateChart()" class="bg-sky-600 hover:bg-sky-500 px-8 py-3 rounded-lg font-bold transition">Analyze Chart</button>
+        <div class="bg-slate-800 p-8 rounded-2xl border-2 border-dashed border-slate-600 text-center mb-10">
+            <input type="file" id="chartUpload" accept="image/*" class="hidden">
+            <label for="chartUpload" class="cursor-pointer bg-sky-600 hover:bg-sky-500 px-6 py-3 rounded-lg font-bold transition inline-block">
+                📷 Upload Chart Image
+            </label>
+            <p class="text-xs text-slate-500 mt-4">Note: Image must contain clear text of the Ascendant sign (e.g., "Ascendant: Leo" or "Lagna: Aries").</p>
+            
+            <div id="loading" class="mt-6 flex flex-col items-center">
+                <div class="spinner"></div>
+                <p class="text-sky-400 mt-2 font-medium">Scanning chart text...</p>
+            </div>
         </div>
 
         <div id="chartDisplay" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
@@ -70,22 +66,40 @@
         };
 
         const houseImportance = {
-            1: "Personality, health, and life path.",
-            2: "Family, wealth, and speech.",
-            3: "Efforts, siblings, and communication.",
-            4: "Happiness, mother, and assets.",
-            5: "Intellect, children, and past luck.",
-            6: "Hard work, health, and challenges.",
-            7: "Marriage and partnerships.",
-            8: "Transformation and longevity.",
-            9: "Wisdom, fortune, and travel.",
-            10: "Career, fame, and status.",
-            11: "Gains and social networks.",
-            12: "Expenses and spiritual growth."
+            1: "Personality, health, and life path.", 2: "Family, wealth, and speech.",
+            3: "Efforts, siblings, and communication.", 4: "Happiness, mother, and assets.",
+            5: "Intellect, children, and past luck.", 6: "Challenges and daily service.",
+            7: "Marriage and partnerships.", 8: "Transformation and longevity.",
+            9: "Wisdom, fortune, and travel.", 10: "Career, fame, and status.",
+            11: "Gains and social networks.", 12: "Expenses and spiritual growth."
         };
 
-        function generateChart() {
-            const ascSign = document.getElementById('ascendantInput').value;
+        const fileInput = document.getElementById('chartUpload');
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            document.getElementById('loading').style.display = 'flex';
+            
+            Tesseract.recognize(file, 'eng').then(({ data: { text } }) => {
+                document.getElementById('loading').style.display = 'none';
+                findAscendant(text);
+            });
+        });
+
+        function findAscendant(ocrText) {
+            const text = ocrText.toLowerCase();
+            const foundSign = zodiacData.find(z => text.includes(z.sign.toLowerCase()));
+            
+            if (foundSign) {
+                generateChart(foundSign.sign);
+            } else {
+                alert("Could not clearly identify the Ascendant sign. Try a clearer image or ensure the sign name is visible.");
+            }
+        }
+
+        function generateChart(ascSign) {
             const startIndex = zodiacData.findIndex(item => item.sign === ascSign);
             const display = document.getElementById('chartDisplay');
             display.innerHTML = '';
@@ -96,10 +110,6 @@
                 const lord = signInfo.lord;
                 const affinity = affinities[lord] || { friends: "N/A", enemies: "N/A" };
                 
-                let exaltationHTML = signInfo.exalted !== "None" 
-                    ? `<div class="exalted-badge">✨ Exalted: ${signInfo.exalted}</div>` 
-                    : "";
-
                 display.innerHTML += `
                     <div class="house-card p-6 rounded-xl flex flex-col justify-between">
                         <div>
@@ -107,26 +117,16 @@
                                 <span class="text-sky-500 font-black text-lg">H${houseNum}</span>
                                 <span class="bg-slate-700 px-3 py-1 rounded text-xs font-bold">${signInfo.sign}</span>
                             </div>
-                            <h3 class="text-xl font-bold text-white mb-1">Ruler: ${lord}</h3>
+                            <h3 class="text-xl font-bold text-white mb-1">${lord} Rules</h3>
                             <p class="text-slate-400 text-sm mb-4 italic">"${houseImportance[houseNum]}"</p>
-                            
                             <div class="space-y-2 border-t border-slate-700 pt-4">
-                                <div class="flex items-center gap-2">
-                                    <span class="tag tag-friend">Friends</span>
-                                    <span class="text-xs text-slate-300">${affinity.friends}</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="tag tag-enemy">Enemies</span>
-                                    <span class="text-xs text-slate-300">${affinity.enemies}</span>
-                                </div>
+                                <div class="flex items-center gap-2"><span class="bg-green-900 text-green-300 text-[10px] px-2 py-0.5 rounded font-bold uppercase">Friends</span><span class="text-xs text-slate-300">${affinity.friends}</span></div>
+                                <div class="flex items-center gap-2"><span class="bg-red-900 text-red-300 text-[10px] px-2 py-0.5 rounded font-bold uppercase">Enemies</span><span class="text-xs text-slate-300">${affinity.enemies}</span></div>
                             </div>
                         </div>
-                        ${exaltationHTML}
-                    </div>
-                `;
+                    </div>`;
             }
         }
-        generateChart();
     </script>
 </body>
 </html>
