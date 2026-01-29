@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstroHouse Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; }
+        .house-card { background: #1e293b; border: 1px solid #334155; transition: 0.3s; }
+        .house-card:hover { border-color: #38bdf8; transform: translateY(-2px); }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-4xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-bold text-sky-400 mb-2">AstroHouse Generator</h1>
+            <p class="text-slate-400">Generate house placements and ruling lords instantly.</p>
+        </header>
+
+        <div class="flex flex-col md:flex-row gap-4 mb-10 justify-center">
+            <select id="ascendantInput" class="bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500">
+                <option value="Aries">Aries</option>
+                <option value="Taurus">Taurus</option>
+                <option value="Gemini">Gemini</option>
+                <option value="Cancer">Cancer</option>
+                <option value="Leo">Leo</option>
+                <option value="Virgo">Virgo</option>
+                <option value="Libra">Libra</option>
+                <option value="Scorpio">Scorpio</option>
+                <option value="Sagittarius">Sagittarius</option>
+                <option value="Capricorn">Capricorn</option>
+                <option value="Aquarius">Aquarius</option>
+                <option value="Pisces">Pisces</option>
+            </select>
+            <button onclick="generateChart()" class="bg-sky-600 hover:bg-sky-500 px-8 py-3 rounded-lg font-bold transition">Generate Chart</button>
+        </div>
+
+        <div id="chartDisplay" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            </div>
+    </div>
+
+    <script>
+        const data = [
+            { sign: "Aries", lord: "Mars" }, { sign: "Taurus", lord: "Venus" },
+            { sign: "Gemini", lord: "Mercury" }, { sign: "Cancer", lord: "Moon" },
+            { sign: "Leo", lord: "Sun" }, { sign: "Virgo", lord: "Mercury" },
+            { sign: "Libra", lord: "Venus" }, { sign: "Scorpio", lord: "Mars" },
+            { sign: "Sagittarius", lord: "Jupiter" }, { sign: "Capricorn", lord: "Saturn" },
+            { sign: "Aquarius", lord: "Saturn" }, { sign: "Pisces", lord: "Jupiter" }
+        ];
+
+        function generateChart() {
+            const ascSign = document.getElementById('ascendantInput').value;
+            const startIndex = data.findIndex(item => item.sign === ascSign);
+            const display = document.getElementById('chartDisplay');
+            display.innerHTML = '';
+
+            for (let i = 0; i < 12; i++) {
+                const current = data[(startIndex + i) % 12];
+                const houseNum = i + 1;
+                
+                display.innerHTML += `
+                    <div class="house-card p-6 rounded-xl">
+                        <div class="text-sky-500 text-sm font-bold uppercase mb-1">House ${houseNum}</div>
+                        <div class="text-2xl font-semibold mb-2">${current.sign}</div>
+                        <div class="text-slate-400 text-sm">Ruling Lord: <span class="text-white font-medium">${current.lord}</span></div>
+                    </div>
+                `;
+            }
+        }
+        // Initial run
+        generateChart();
+    </script>
+</body>
+</html>
