@@ -3,23 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AstroHouse Pro</title>
+    <title>AstroHouse Pro + Exaltations</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; }
         .house-card { background: #1e293b; border: 1px solid #334155; transition: 0.3s; }
-        .house-card:hover { border-color: #38bdf8; transform: translateY(-2px); }
+        .house-card:hover { border-color: #38bdf8; }
+        .exalted-badge { background: #0369a1; color: #7dd3fc; font-size: 0.7rem; padding: 2px 8px; border-radius: 99px; margin-top: 8px; display: inline-block; border: 1px solid #0ea5e9; }
     </style>
 </head>
 <body class="p-4 md:p-8">
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-6xl mx-auto">
         <header class="text-center mb-10">
-            <h1 class="text-4xl font-bold text-sky-400 mb-2">AstroHouse Generator</h1>
-            <p class="text-slate-400">Generate house placements and ruling lords instantly.</p>
+            <h1 class="text-4xl font-bold text-sky-400 mb-2">AstroHouse Intelligence</h1>
+            <p class="text-slate-400">House placements, Ruling Lords, and Exaltation points.</p>
         </header>
 
         <div class="flex flex-col md:flex-row gap-4 mb-10 justify-center">
-            <select id="ascendantInput" class="bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500">
+            <select id="ascendantInput" class="bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500 text-white">
                 <option value="Aries">Aries</option>
                 <option value="Taurus">Taurus</option>
                 <option value="Gemini">Gemini</option>
@@ -36,40 +37,71 @@
             <button onclick="generateChart()" class="bg-sky-600 hover:bg-sky-500 px-8 py-3 rounded-lg font-bold transition">Generate Chart</button>
         </div>
 
-        <div id="chartDisplay" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div id="chartDisplay" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             </div>
     </div>
 
     <script>
-        const data = [
-            { sign: "Aries", lord: "Mars" }, { sign: "Taurus", lord: "Venus" },
-            { sign: "Gemini", lord: "Mercury" }, { sign: "Cancer", lord: "Moon" },
-            { sign: "Leo", lord: "Sun" }, { sign: "Virgo", lord: "Mercury" },
-            { sign: "Libra", lord: "Venus" }, { sign: "Scorpio", lord: "Mars" },
-            { sign: "Sagittarius", lord: "Jupiter" }, { sign: "Capricorn", lord: "Saturn" },
-            { sign: "Aquarius", lord: "Saturn" }, { sign: "Pisces", lord: "Jupiter" }
+        const zodiacData = [
+            { sign: "Aries", lord: "Mars", exalted: "Sun" },
+            { sign: "Taurus", lord: "Venus", exalted: "Moon" },
+            { sign: "Gemini", lord: "Mercury", exalted: "None" },
+            { sign: "Cancer", lord: "Moon", exalted: "Jupiter" },
+            { sign: "Leo", lord: "Sun", exalted: "None" },
+            { sign: "Virgo", lord: "Mercury", exalted: "Mercury" },
+            { sign: "Libra", lord: "Venus", exalted: "Saturn" },
+            { sign: "Scorpio", lord: "Mars", exalted: "None" },
+            { sign: "Sagittarius", lord: "Jupiter", exalted: "None" },
+            { sign: "Capricorn", lord: "Saturn", exalted: "Mars" },
+            { sign: "Aquarius", lord: "Saturn", exalted: "None" },
+            { sign: "Pisces", lord: "Jupiter", exalted: "Venus" }
         ];
+
+        const houseImportance = {
+            1: "Physical body, appearance, and soul's purpose.",
+            2: "Wealth, speech, family, and fixed assets.",
+            3: "Siblings, courage, communication, and short travels.",
+            4: "Mother, home, happiness, and property.",
+            5: "Creativity, children, romance, and past life merits.",
+            6: "Health, debts, enemies, and daily service.",
+            7: "Partnerships, marriage, and public dealings.",
+            8: "Longevity, secrets, transformations, and inheritance.",
+            9: "Fortune, higher learning, father, and religion.",
+            10: "Career, status, fame, and public action.",
+            11: "Gains, friendships, and fulfillment of desires.",
+            12: "Spiritual liberation, losses, isolation, and foreign lands."
+        };
 
         function generateChart() {
             const ascSign = document.getElementById('ascendantInput').value;
-            const startIndex = data.findIndex(item => item.sign === ascSign);
+            const startIndex = zodiacData.findIndex(item => item.sign === ascSign);
             const display = document.getElementById('chartDisplay');
             display.innerHTML = '';
 
             for (let i = 0; i < 12; i++) {
-                const current = data[(startIndex + i) % 12];
                 const houseNum = i + 1;
+                const currentSignData = zodiacData[(startIndex + i) % 12];
+                const significance = houseImportance[houseNum];
                 
+                let exaltationHTML = currentSignData.exalted !== "None" 
+                    ? `<div class="exalted-badge">✨ ${currentSignData.exalted} is Exalted here</div>` 
+                    : "";
+
                 display.innerHTML += `
-                    <div class="house-card p-6 rounded-xl">
-                        <div class="text-sky-500 text-sm font-bold uppercase mb-1">House ${houseNum}</div>
-                        <div class="text-2xl font-semibold mb-2">${current.sign}</div>
-                        <div class="text-slate-400 text-sm">Ruling Lord: <span class="text-white font-medium">${current.lord}</span></div>
+                    <div class="house-card p-6 rounded-xl flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start">
+                                <span class="text-sky-500 text-xs font-bold uppercase tracking-wider">House ${houseNum}</span>
+                                <span class="text-slate-500 text-xs italic">${currentSignData.sign}</span>
+                            </div>
+                            <h3 class="text-xl font-bold mt-1 text-white">${currentSignData.lord} <span class="text-slate-500 text-sm font-normal">Rules</span></h3>
+                            <p class="text-slate-400 text-sm mt-3 leading-relaxed">${significance}</p>
+                        </div>
+                        ${exaltationHTML}
                     </div>
                 `;
             }
         }
-        // Initial run
         generateChart();
     </script>
 </body>
