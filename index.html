@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AstroVision AI - Chart Reader</title>
+    <title>AstroVision AI - Smart Reader</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src='https://unpkg.com/tesseract.js@v4.0.1/dist/tesseract.min.js'></script>
     <style>
         body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; }
-        .house-card { background: #1e293b; border: 1px solid #334155; height: 100%; transition: 0.3s; }
-        .tag-friend { background: #065f46; color: #34d399; }
-        .tag-enemy { background: #7f1d1d; color: #f87171; }
-        #loading { display: none; }
-        .spinner { border: 4px solid rgba(255, 255, 255, 0.1); border-left-color: #38bdf8; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        .house-card { background: #1e293b; border: 1px solid #334155; transition: 0.3s; height: 100%; }
+        .house-card:hover { border-color: #38bdf8; }
+        .spinner { border: 3px solid rgba(255, 255, 255, 0.1); border-left-color: #38bdf8; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
@@ -20,19 +18,32 @@
     <div class="max-w-6xl mx-auto">
         <header class="text-center mb-8">
             <h1 class="text-4xl font-bold text-sky-400 mb-2">AstroVision AI</h1>
-            <p class="text-slate-400">Upload your chart image to extract house placements.</p>
+            <p class="text-slate-400 font-medium">Upload a chart or select manually if the scan fails.</p>
         </header>
 
-        <div class="bg-slate-800 p-8 rounded-2xl border-2 border-dashed border-slate-600 text-center mb-10">
-            <input type="file" id="chartUpload" accept="image/*" class="hidden">
-            <label for="chartUpload" class="cursor-pointer bg-sky-600 hover:bg-sky-500 px-6 py-3 rounded-lg font-bold transition inline-block">
-                📷 Upload Chart Image
-            </label>
-            <p class="text-xs text-slate-500 mt-4">Note: Image must contain clear text of the Ascendant sign (e.g., "Ascendant: Leo" or "Lagna: Aries").</p>
-            
-            <div id="loading" class="mt-6 flex flex-col items-center">
-                <div class="spinner"></div>
-                <p class="text-sky-400 mt-2 font-medium">Scanning chart text...</p>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+            <div class="lg:col-span-2 bg-slate-800 p-6 rounded-2xl border-2 border-dashed border-slate-600 text-center">
+                <input type="file" id="chartUpload" accept="image/*" class="hidden">
+                <label for="chartUpload" class="cursor-pointer bg-sky-600 hover:bg-sky-500 px-6 py-3 rounded-lg font-bold transition inline-block">
+                    📷 Upload Chart Image
+                </label>
+                <div id="loading" class="hidden mt-4 justify-center items-center gap-3">
+                    <div class="spinner"></div>
+                    <span class="text-sky-400 animate-pulse">Scanning for Ascendant...</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Manual Selection</label>
+                <select id="manualSign" onchange="generateChart(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-sky-500">
+                    <option value="">Select Sign Manually...</option>
+                    <option value="Aries">Aries</option><option value="Taurus">Taurus</option>
+                    <option value="Gemini">Gemini</option><option value="Cancer">Cancer</option>
+                    <option value="Leo">Leo</option><option value="Virgo">Virgo</option>
+                    <option value="Libra">Libra</option><option value="Scorpio">Scorpio</option>
+                    <option value="Sagittarius">Sagittarius</option><option value="Capricorn">Capricorn</option>
+                    <option value="Aquarius">Aquarius</option><option value="Pisces">Pisces</option>
+                </select>
             </div>
         </div>
 
@@ -55,51 +66,42 @@
             { sign: "Pisces", lord: "Jupiter", exalted: "Venus" }
         ];
 
-        const affinities = {
-            "Sun": { friends: "Moon, Mars, Jupiter", enemies: "Venus, Saturn" },
-            "Moon": { friends: "Sun, Mercury", enemies: "None" },
-            "Mars": { friends: "Sun, Moon, Jupiter", enemies: "Mercury" },
-            "Mercury": { friends: "Sun, Venus", enemies: "Moon" },
-            "Jupiter": { friends: "Sun, Moon, Mars", enemies: "Mercury, Venus" },
-            "Venus": { friends: "Mercury, Saturn", enemies: "Sun, Moon" },
-            "Saturn": { friends: "Mercury, Venus", enemies: "Sun, Moon, Mars" }
-        };
-
         const houseImportance = {
-            1: "Personality, health, and life path.", 2: "Family, wealth, and speech.",
-            3: "Efforts, siblings, and communication.", 4: "Happiness, mother, and assets.",
-            5: "Intellect, children, and past luck.", 6: "Challenges and daily service.",
-            7: "Marriage and partnerships.", 8: "Transformation and longevity.",
-            9: "Wisdom, fortune, and travel.", 10: "Career, fame, and status.",
-            11: "Gains and social networks.", 12: "Expenses and spiritual growth."
+            1: "Personality, Body & Soul.", 2: "Wealth, Family & Speech.", 3: "Courage & Communication.", 
+            4: "Mother, Home & Comfort.", 5: "Children & Creativity.", 6: "Obstacles & Health.",
+            7: "Partnership & Marriage.", 8: "Secrets & Longevity.", 9: "Wisdom & Luck.",
+            10: "Career & Public Status.", 11: "Gains & Social Circles.", 12: "Expenses & Solitude."
         };
 
         const fileInput = document.getElementById('chartUpload');
         
-        fileInput.addEventListener('change', (e) => {
+        fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
             document.getElementById('loading').style.display = 'flex';
             
-            Tesseract.recognize(file, 'eng').then(({ data: { text } }) => {
+            try {
+                const { data: { text } } = await Tesseract.recognize(file, 'eng');
                 document.getElementById('loading').style.display = 'none';
-                findAscendant(text);
-            });
+                
+                const cleanText = text.toLowerCase().replace(/[^a-z]/g, ' ');
+                const foundSign = zodiacData.find(z => cleanText.includes(z.sign.toLowerCase()));
+                
+                if (foundSign) {
+                    document.getElementById('manualSign').value = foundSign.sign;
+                    generateChart(foundSign.sign);
+                } else {
+                    alert("AI Scan failed: Sign name not detected clearly. Please use manual selection.");
+                }
+            } catch (err) {
+                alert("Error scanning image. Try another file.");
+                document.getElementById('loading').style.display = 'none';
+            }
         });
 
-        function findAscendant(ocrText) {
-            const text = ocrText.toLowerCase();
-            const foundSign = zodiacData.find(z => text.includes(z.sign.toLowerCase()));
-            
-            if (foundSign) {
-                generateChart(foundSign.sign);
-            } else {
-                alert("Could not clearly identify the Ascendant sign. Try a clearer image or ensure the sign name is visible.");
-            }
-        }
-
         function generateChart(ascSign) {
+            if (!ascSign) return;
             const startIndex = zodiacData.findIndex(item => item.sign === ascSign);
             const display = document.getElementById('chartDisplay');
             display.innerHTML = '';
@@ -107,23 +109,16 @@
             for (let i = 0; i < 12; i++) {
                 const houseNum = i + 1;
                 const signInfo = zodiacData[(startIndex + i) % 12];
-                const lord = signInfo.lord;
-                const affinity = affinities[lord] || { friends: "N/A", enemies: "N/A" };
                 
                 display.innerHTML += `
-                    <div class="house-card p-6 rounded-xl flex flex-col justify-between">
-                        <div>
-                            <div class="flex justify-between items-center mb-4">
-                                <span class="text-sky-500 font-black text-lg">H${houseNum}</span>
-                                <span class="bg-slate-700 px-3 py-1 rounded text-xs font-bold">${signInfo.sign}</span>
-                            </div>
-                            <h3 class="text-xl font-bold text-white mb-1">${lord} Rules</h3>
-                            <p class="text-slate-400 text-sm mb-4 italic">"${houseImportance[houseNum]}"</p>
-                            <div class="space-y-2 border-t border-slate-700 pt-4">
-                                <div class="flex items-center gap-2"><span class="bg-green-900 text-green-300 text-[10px] px-2 py-0.5 rounded font-bold uppercase">Friends</span><span class="text-xs text-slate-300">${affinity.friends}</span></div>
-                                <div class="flex items-center gap-2"><span class="bg-red-900 text-red-300 text-[10px] px-2 py-0.5 rounded font-bold uppercase">Enemies</span><span class="text-xs text-slate-300">${affinity.enemies}</span></div>
-                            </div>
+                    <div class="house-card p-6 rounded-xl">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="text-sky-500 font-bold">HOUSE ${houseNum}</span>
+                            <span class="text-xs bg-slate-700 px-2 py-1 rounded">${signInfo.sign}</span>
                         </div>
+                        <h3 class="text-xl font-bold mb-2">${signInfo.lord} Rules</h3>
+                        <p class="text-slate-400 text-sm italic mb-4">"${houseImportance[houseNum]}"</p>
+                        ${signInfo.exalted !== "None" ? `<div class="text-[10px] text-sky-300 border border-sky-800 bg-sky-950 inline-block px-2 py-1 rounded">✨ ${signInfo.exalted} is Exalted here</div>` : ''}
                     </div>`;
             }
         }
