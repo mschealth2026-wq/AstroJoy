@@ -3,70 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AstroVision AI - Final Analyzer</title>
+    <title>AstroVision Pro - Aspect Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; }
-        .house-card { background: #1e293b; border: 1px solid #334155; border-radius: 20px; transition: 0.3s; }
-        .planet-row { background: #0f172a; border-radius: 12px; padding: 12px; margin-bottom: 8px; border: 1px solid #334155; }
-        .tag { font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+        .house-card { background: #1e293b; border: 1px solid #334155; border-radius: 20px; position: relative; }
+        .planet-row { background: #0f172a; border-radius: 12px; padding: 10px; margin-bottom: 8px; border: 1px solid #334155; }
+        .tag { font-size: 9px; font-weight: bold; padding: 2px 5px; border-radius: 4px; text-transform: uppercase; }
+        .tag-aspect { background: #4c1d95; color: #ddd6fe; border: 1px solid #7c3aed; }
         .tag-friend { background: #064e3b; color: #34d399; }
         .tag-enemy { background: #7f1d1d; color: #f87171; }
-        .tag-neutral { background: #334155; color: #94a3b8; }
-        .tag-own { background: #1e3a8a; color: #93c5fd; }
-        .strength-bar { height: 4px; border-radius: 2px; background: #334155; margin-top: 8px; overflow: hidden; }
+        .strength-bar { height: 4px; border-radius: 2px; background: #334155; margin-top: 6px; overflow: hidden; }
         .strength-fill { height: 100%; transition: width 0.5s; }
     </style>
 </head>
 <body class="p-6 md:p-10">
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w-7xl mx-auto">
         <header class="mb-10 text-center">
             <h1 class="text-4xl font-black text-sky-400 mb-2">AstroVision AI</h1>
-            <p class="text-slate-400 uppercase tracking-widest text-xs">Aquarius Ascendant Deep Analysis</p>
+            <p class="text-slate-400 uppercase tracking-widest text-xs font-bold">Planetary Strength & Full Aspect Analysis</p>
         </header>
 
-        <div id="chartDisplay" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        <div id="chartDisplay" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
     </div>
 
     <script>
         const zodiac = [
-            { name: "Aries", lord: "Mar", purpose: "Short Travels, Siblings, and Communication" },
-            { name: "Taurus", lord: "Ven", purpose: "Mother, Comforts, and Property" },
-            { name: "Gemini", lord: "Mer", purpose: "Education, Romance, and Intelligence" },
-            { name: "Cancer", lord: "Mon", purpose: "Health, Debts, and Daily Work" },
-            { name: "Leo", lord: "Sun", purpose: "Marriage, Partnership, and Public Image" },
-            { name: "Virgo", lord: "Mer", purpose: "Longevity, Research, and Transformation" },
-            { name: "Libra", lord: "Ven", purpose: "Luck, Wisdom, and Higher Learning" },
-            { name: "Scorpio", lord: "Mar", purpose: "Career, Fame, and Social Status" },
-            { name: "Sagittarius", lord: "Jup", purpose: "Gains, Social Circles, and Desires" },
-            { name: "Capricorn", lord: "Sat", purpose: "Expenses, Loss, and Spirituality" },
-            { name: "Aquarius", lord: "Sat", purpose: "Self, Vitality, and Personality" },
-            { name: "Pisces", lord: "Jup", purpose: "Wealth, Family, and Speech" }
+            { name: "Aries", lord: "Mar" }, { name: "Taurus", lord: "Ven" },
+            { name: "Gemini", lord: "Mer" }, { name: "Cancer", lord: "Mon" },
+            { name: "Leo", lord: "Sun" }, { name: "Virgo", lord: "Mer" },
+            { name: "Libra", lord: "Ven" }, { name: "Scorpio", lord: "Mar" },
+            { name: "Sagittarius", lord: "Jup" }, { name: "Capricorn", lord: "Sat" },
+            { name: "Aquarius", lord: "Sat" }, { name: "Pisces", lord: "Jup" }
         ];
 
-        const relationships = {
-            "Sun": { friends: ["Mon", "Mar", "Jup"], enemies: ["Ven", "Sat"] },
-            "Mon": { friends: ["Sun", "Mer"], enemies: [] },
-            "Mar": { friends: ["Sun", "Mon", "Jup"], enemies: ["Mer"] },
-            "Mer": { friends: ["Sun", "Ven"], enemies: ["Mon"] },
-            "Jup": { friends: ["Sun", "Mon", "Mar"], enemies: ["Mer", "Ven"] },
-            "Ven": { friends: ["Mer", "Sat"], enemies: ["Sun", "Mon"] },
-            "Sat": { friends: ["Mer", "Ven"], enemies: ["Sun", "Mon", "Mar"] },
-            "Rah": { friends: ["Ven", "Sat", "Mer"], enemies: ["Sun", "Mon"] },
-            "Ket": { friends: ["Mar", "Sun", "Jup"], enemies: ["Mer", "Ven"] }
-        };
-
-        // Static data from your uploaded screenshot
+        // Your Chart Data from AstroSage
         const planetData = [
-            { p: "Sun", sign: "Taurus", deg: 15.11 },
-            { p: "Mon", sign: "Capricorn", deg: 0.26 },
-            { p: "Mar", sign: "Taurus", deg: 16.08 },
-            { p: "Mer", sign: "Aries", deg: 23.50 },
-            { p: "Jup", sign: "Scorpio", deg: 12.05 },
-            { p: "Ven", sign: "Gemini", deg: 29.41 },
-            { p: "Sat", sign: "Libra", deg: 4.54 },
-            { p: "Rah", sign: "Gemini", deg: 2.18 },
-            { p: "Ket", sign: "Sagittarius", deg: 2.18 }
+            { p: "Sun", sign: "Taurus", deg: 15.11, house: 4 },
+            { p: "Mon", sign: "Capricorn", deg: 0.26, house: 12 },
+            { p: "Mar", sign: "Taurus", deg: 16.08, house: 4 },
+            { p: "Mer", sign: "Aries", deg: 23.50, house: 3 },
+            { p: "Jup", sign: "Scorpio", deg: 12.05, house: 10 },
+            { p: "Ven", sign: "Gemini", deg: 29.41, house: 5 },
+            { p: "Sat", sign: "Libra", deg: 4.54, house: 9 },
+            { p: "Rah", sign: "Gemini", deg: 2.18, house: 5 },
+            { p: "Ket", sign: "Sagittarius", deg: 2.18, house: 11 }
         ];
 
         function getStrength(deg) {
@@ -75,49 +56,67 @@
             return { l: "Weak (10%)", w: "20%", c: "#ef4444" };
         }
 
+        function calculateAspects(houseNum) {
+            let aspectingPlanets = [];
+            planetData.forEach(p => {
+                let p_house = p.house;
+                let diff = (houseNum - p_house + 12) % 12;
+                if (diff === 0) diff = 12; // Adjusted for 1-based indexing
+                
+                let isAspecting = false;
+                // All planets aspect the 7th house
+                if (diff === 7) isAspecting = true;
+                // Special Mars aspects
+                if (p.p === "Mar" && (diff === 4 || diff === 8)) isAspecting = true;
+                // Special Jupiter/Rahu/Ketu aspects
+                if (["Jup", "Rah", "Ket"].includes(p.p) && (diff === 5 || diff === 9)) isAspecting = true;
+                // Special Saturn aspects
+                if (p.p === "Sat" && (diff === 3 || diff === 10)) isAspecting = true;
+
+                if (isAspecting) aspectingPlanets.push(p.p);
+            });
+            return aspectingPlanets;
+        }
+
         function render() {
-            const ascName = "Aquarius"; // From Lag: Aqu in image
+            const ascName = "Aquarius";
             const startIdx = zodiac.findIndex(z => z.name === ascName);
             const container = document.getElementById('chartDisplay');
 
             for (let i = 0; i < 12; i++) {
                 const houseNum = i + 1;
                 const sign = zodiac[(startIdx + i) % 12];
-                const housePlanets = planetData.filter(p => p.sign === sign.name);
-                
-                let planetRows = housePlanets.map(p => {
-                    const rel = relationships[p.p];
-                    const strength = getStrength(p.deg);
-                    let aff = "Neutral";
-                    let affClass = "tag-neutral";
-
-                    if (sign.lord === p.p) { aff = "Own Sign"; affClass = "tag-own"; }
-                    else if (rel.friends.includes(sign.lord)) { aff = "Friend's Sign"; affClass = "tag-friend"; }
-                    else if (rel.enemies.includes(sign.lord)) { aff = "Enemy's Sign"; affClass = "tag-enemy"; }
-
-                    return `
-                        <div class="planet-row">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="font-bold text-sky-400 text-lg">${p.p}</span>
-                                <span class="tag ${affClass}">${aff}</span>
-                            </div>
-                            <div class="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
-                                <span>${strength.l}</span>
-                                <span>${p.deg}°</span>
-                            </div>
-                            <div class="strength-bar"><div class="strength-fill" style="width:${strength.w}; background:${strength.c}"></div></div>
-                        </div>`;
-                }).join('');
+                const housePlanets = planetData.filter(p => p.house === houseNum);
+                const aspecting = calculateAspects(houseNum);
 
                 container.innerHTML += `
-                    <div class="house-card p-6">
+                    <div class="house-card p-5">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-black text-2xl text-white">HOUSE ${houseNum}</h3>
-                            <span class="text-[10px] font-bold text-slate-500 uppercase">${sign.name}</span>
+                            <h3 class="font-black text-xl text-sky-400">HOUSE ${houseNum}</h3>
+                            <span class="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">${sign.name}</span>
                         </div>
-                        <p class="text-[11px] text-slate-400 mb-6 italic leading-relaxed">"${sign.purpose}"</p>
-                        <div class="space-y-4">${planetRows || '<p class="text-xs text-slate-700 italic py-4">This house is empty</p>'}</div>
-                        <div class="mt-6 pt-4 border-t border-slate-800 text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center">Ruler: ${sign.lord}</div>
+
+                        <div class="mb-4">
+                            <h4 class="text-[9px] text-slate-500 font-bold uppercase mb-2 tracking-widest">Planets Inside</h4>
+                            ${housePlanets.map(p => `
+                                <div class="planet-row">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-bold text-white text-sm">${p.p}</span>
+                                        <span class="text-[9px] text-slate-400">${getStrength(p.deg).l}</span>
+                                    </div>
+                                    <div class="strength-bar"><div class="strength-fill" style="width:${getStrength(p.deg).w}; background:${getStrength(p.deg).c}"></div></div>
+                                </div>
+                            `).join('') || '<p class="text-[10px] text-slate-700 italic">Empty</p>'}
+                        </div>
+
+                        <div>
+                            <h4 class="text-[9px] text-violet-400 font-bold uppercase mb-2 tracking-widest">Under Aspect Of</h4>
+                            <div class="flex flex-wrap gap-2">
+                                ${aspecting.map(p => `<span class="tag tag-aspect">👁️ ${p}</span>`).join('') || '<span class="text-[10px] text-slate-700 italic">No aspects</span>'}
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 pt-3 border-t border-slate-800 text-[10px] text-center text-slate-600 font-bold">RULER: ${sign.lord}</div>
                     </div>`;
             }
         }
