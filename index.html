@@ -3,15 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AstroVision - Full Chart Reader</title>
+    <title>AstroVision - Planet Strength AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src='https://unpkg.com/tesseract.js@v4.0.1/dist/tesseract.min.js'></script>
     <style>
         body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; }
-        .house-card { background: #1e293b; border: 1px solid #334155; transition: 0.3s; }
-        .house-card:hover { border-color: #38bdf8; }
-        .planet-pill { background: #0369a1; color: #7dd3fc; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: bold; margin: 2px; display: inline-block; border: 1px solid #0ea5e9; }
-        .transit-pill { background: #92400e; color: #fcd34d; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: bold; margin: 2px; display: inline-block; border: 1px solid #b45309; }
+        .house-card { background: #1e293b; border: 1px solid #334155; border-radius: 24px; }
+        .strength-bar { height: 4px; border-radius: 2px; background: #334155; overflow: hidden; margin-top: 4px; }
+        .strength-fill { height: 100%; transition: width 1s ease-in-out; }
+        .planet-box { background: #0f172a; border: 1px solid #1e293b; padding: 10px; border-radius: 12px; margin-bottom: 8px; }
+        .tag-youth { background: #065f46; color: #34d399; } /* Strong */
+        .tag-infant { background: #1e1b4b; color: #818cf8; } /* Moderate */
+        .tag-dead { background: #450a0a; color: #f87171; } /* Weak */
         .spinner { border: 3px solid rgba(255, 255, 255, 0.1); border-left-color: #38bdf8; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
@@ -19,18 +22,18 @@
 <body class="p-4 md:p-10">
     <div class="max-w-6xl mx-auto">
         <header class="text-center mb-10">
-            <h1 class="text-4xl font-extrabold text-sky-400 mb-2">AstroVision Reader</h1>
-            <p class="text-slate-400">Upload your AstroSage table to map planets & transits</p>
+            <h1 class="text-4xl font-black text-sky-400 mb-2">AstroVision Strength AI</h1>
+            <p class="text-slate-400 uppercase tracking-widest text-xs font-bold">Planetary Avastha & Degree Analysis</p>
         </header>
 
         <div class="bg-slate-800 p-10 rounded-3xl border-2 border-dashed border-slate-700 text-center mb-10">
             <input type="file" id="chartUpload" class="hidden" accept="image/*">
-            <label for="chartUpload" class="cursor-pointer bg-sky-600 hover:bg-sky-500 px-10 py-4 rounded-xl font-bold text-lg inline-block transition shadow-lg shadow-sky-900/20">
-                📷 Upload Birth Chart Image
+            <label for="chartUpload" class="cursor-pointer bg-sky-600 hover:bg-sky-500 px-10 py-4 rounded-xl font-bold text-lg inline-block transition">
+                📷 Upload Birth Chart Table
             </label>
             <div id="loading" class="hidden mt-6 flex flex-col items-center gap-2">
                 <div class="spinner"></div>
-                <p class="text-sky-400 font-medium">Extracting planets from chart...</p>
+                <p class="text-sky-400 font-medium">Reading Degrees & Calculating Power...</p>
             </div>
         </div>
 
@@ -39,108 +42,31 @@
 
     <script>
         const zodiac = [
-            { name: "Aries", abbr: "ari", lord: "Mars", purpose: "Self & Vitality" },
-            { name: "Taurus", abbr: "tau", lord: "Venus", purpose: "Wealth & Family" },
-            { name: "Gemini", abbr: "gem", lord: "Mercury", purpose: "Skills & Communication" },
-            { name: "Cancer", abbr: "can", lord: "Moon", purpose: "Emotions & Home" },
-            { name: "Leo", abbr: "leo", lord: "Sun", purpose: "Children & Creativity" },
-            { name: "Virgo", abbr: "vir", lord: "Mercury", purpose: "Health & Obstacles" },
-            { name: "Libra", abbr: "lib", lord: "Venus", purpose: "Partnership & Marriage" },
-            { name: "Scorpio", abbr: "sco", lord: "Mars", purpose: "Secrets & Longevity" },
-            { name: "Sagittarius", abbr: "sag", lord: "Jupiter", purpose: "Wisdom & Fortune" },
-            { name: "Capricorn", abbr: "cap", lord: "Saturn", purpose: "Career & Status" },
-            { name: "Aquarius", abbr: "aqu", lord: "Saturn", purpose: "Gains & Fulfillment" },
-            { name: "Pisces", abbr: "pis", lord: "Jupiter", purpose: "Spirituality & Loss" }
+            { name: "Aries", abbr: "ari", lord: "Mars" }, { name: "Taurus", abbr: "tau", lord: "Venus" },
+            { name: "Gemini", abbr: "gem", lord: "Mercury" }, { name: "Cancer", abbr: "can", lord: "Moon" },
+            { name: "Leo", abbr: "leo", lord: "Sun" }, { name: "Virgo", abbr: "vir", lord: "Mercury" },
+            { name: "Libra", abbr: "lib", lord: "Venus" }, { name: "Scorpio", abbr: "sco", lord: "Mars" },
+            { name: "Sagittarius", abbr: "sag", lord: "Jupiter" }, { name: "Capricorn", abbr: "cap", lord: "Saturn" },
+            { name: "Aquarius", abbr: "aqu", lord: "Saturn" }, { name: "Pisces", abbr: "pis", lord: "Jupiter" }
         ];
 
-        // Current Transits (Jan 30, 2026)
-        const transits = [
-            { p: "Saturn", sign: "Pisces" }, { p: "Jupiter", sign: "Gemini" },
-            { p: "Sun", sign: "Aquarius" }, { p: "Mars", sign: "Capricorn" }
-        ];
+        const planets = ["Sun", "Mon", "Mar", "Mer", "Jup", "Ven", "Sat", "Rah", "Ket"];
 
-        const planetNames = ["Sun", "Mon", "Mar", "Mer", "Jup", "Ven", "Sat", "Rah", "Ket"];
+        function getStrength(deg) {
+            const d = parseFloat(deg);
+            if (d >= 12 && d <= 18) return { label: "Youth (100%)", class: "tag-youth", width: "100%", color: "#10b981" };
+            if (d > 6 && d < 12 || d > 18 && d < 24) return { label: "Adolescent (50%)", class: "tag-infant", width: "50%", color: "#6366f1" };
+            if (d <= 6) return { label: "Infant (25%)", class: "tag-infant", width: "25%", color: "#818cf8" };
+            return { label: "Dead/Old (0%)", class: "tag-dead", width: "10%", color: "#ef4444" };
+        }
 
         document.getElementById('chartUpload').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
             document.getElementById('loading').style.display = 'flex';
             const { data: { text } } = await Tesseract.recognize(file, 'eng');
             document.getElementById('loading').style.display = 'none';
-            
             processData(text.toLowerCase());
         });
 
-        function processData(text) {
-            // Find Lagna first to set the houses
-            let lagIdx = text.indexOf("lag");
-            if (lagIdx === -1) { alert("Lagna not found. Make sure the table shows 'Lag'."); return; }
-            
-            let lagSection = text.substring(lagIdx, lagIdx + 40);
-            let ascObj = zodiac.find(z => lagSection.includes(z.abbr));
-            
-            if (!ascObj) { alert("Could not identify the Ascendant sign."); return; }
-
-            // Find where each planet is
-            let planetMap = {};
-            planetNames.forEach(p => {
-                let pIdx = text.indexOf(p.toLowerCase());
-                if (pIdx !== -1) {
-                    let pSection = text.substring(pIdx, pIdx + 40);
-                    let foundSign = zodiac.find(z => pSection.includes(z.abbr));
-                    if (foundSign) planetMap[p] = foundSign.name;
-                }
-            });
-
-            render(ascObj.name, planetMap);
-        }
-
-        function render(ascName, planetMap) {
-            const startIdx = zodiac.findIndex(z => z.name === ascName);
-            const container = document.getElementById('chartDisplay');
-            container.innerHTML = '';
-
-            for (let i = 0; i < 12; i++) {
-                const houseNum = i + 1;
-                const sign = zodiac[(startIdx + i) % 12];
-                
-                // Birth Planets
-                let birthPlanets = Object.keys(planetMap).filter(k => planetMap[k] === sign.name);
-                // Current Transits
-                let currentPlanets = transits.filter(t => t.sign === sign.name);
-
-                container.innerHTML += `
-                    <div class="house-card p-6 rounded-3xl">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <h3 class="text-sky-400 font-black text-xl tracking-tighter">HOUSE ${houseNum}</h3>
-                                <p class="text-[10px] text-slate-500 font-bold uppercase">${sign.name} (${sign.lord})</p>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <p class="text-xs text-slate-400 italic">Purpose: ${sign.purpose}</p>
-                        </div>
-
-                        <div class="space-y-4">
-                            <div>
-                                <h4 class="text-[9px] text-slate-500 font-bold uppercase mb-2">At Birth (Fixed)</h4>
-                                <div class="flex flex-wrap">
-                                    ${birthPlanets.map(p => `<span class="planet-pill">${p}</span>`).join('') || '<span class="text-slate-700 text-xs italic">Empty</span>'}
-                                </div>
-                            </div>
-
-                            <div>
-                                <h4 class="text-[9px] text-orange-500/70 font-bold uppercase mb-2">Live Transits (Moving)</h4>
-                                <div class="flex flex-wrap">
-                                    ${currentPlanets.map(t => `<span class="transit-pill">🚀 ${t.p}</span>`).join('') || '<span class="text-slate-700 text-xs italic">Clear</span>'}
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
-            }
-        }
-    </script>
-</body>
-</html>
+        function processData(text)
