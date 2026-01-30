@@ -3,70 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AstroVision - Planet Strength AI</title>
+    <title>AstroVision - Deep Analysis</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src='https://unpkg.com/tesseract.js@v4.0.1/dist/tesseract.min.js'></script>
     <style>
         body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; }
-        .house-card { background: #1e293b; border: 1px solid #334155; border-radius: 24px; }
-        .strength-bar { height: 4px; border-radius: 2px; background: #334155; overflow: hidden; margin-top: 4px; }
-        .strength-fill { height: 100%; transition: width 1s ease-in-out; }
-        .planet-box { background: #0f172a; border: 1px solid #1e293b; padding: 10px; border-radius: 12px; margin-bottom: 8px; }
-        .tag-youth { background: #065f46; color: #34d399; } /* Strong */
-        .tag-infant { background: #1e1b4b; color: #818cf8; } /* Moderate */
-        .tag-dead { background: #450a0a; color: #f87171; } /* Weak */
-        .spinner { border: 3px solid rgba(255, 255, 255, 0.1); border-left-color: #38bdf8; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .house-card { background: #1e293b; border: 1px solid #334155; border-radius: 20px; transition: 0.3s; }
+        .planet-row { background: #0f172a; border-radius: 12px; padding: 12px; margin-bottom: 8px; border: 1px solid #1e293b; }
+        .tag { font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+        .tag-friend { background: #065f46; color: #34d399; }
+        .tag-enemy { background: #7f1d1d; color: #f87171; }
+        .tag-neutral { background: #334155; color: #94a3b8; }
+        .tag-own { background: #1e3a8a; color: #93c5fd; }
+        .strength-bar { height: 4px; border-radius: 2px; background: #334155; margin-top: 8px; overflow: hidden; }
+        .strength-fill { height: 100%; transition: width 0.5s; }
     </style>
 </head>
-<body class="p-4 md:p-10">
+<body class="p-6">
     <div class="max-w-6xl mx-auto">
-        <header class="text-center mb-10">
-            <h1 class="text-4xl font-black text-sky-400 mb-2">AstroVision Strength AI</h1>
-            <p class="text-slate-400 uppercase tracking-widest text-xs font-bold">Planetary Avastha & Degree Analysis</p>
+        <header class="mb-10 text-center">
+            <h1 class="text-3xl font-black text-sky-400">AstroVision Pro</h1>
+            <p class="text-slate-400">Aquarius Ascendant Analysis</p>
         </header>
-
-        <div class="bg-slate-800 p-10 rounded-3xl border-2 border-dashed border-slate-700 text-center mb-10">
-            <input type="file" id="chartUpload" class="hidden" accept="image/*">
-            <label for="chartUpload" class="cursor-pointer bg-sky-600 hover:bg-sky-500 px-10 py-4 rounded-xl font-bold text-lg inline-block transition">
-                📷 Upload Birth Chart Table
-            </label>
-            <div id="loading" class="hidden mt-6 flex flex-col items-center gap-2">
-                <div class="spinner"></div>
-                <p class="text-sky-400 font-medium">Reading Degrees & Calculating Power...</p>
-            </div>
-        </div>
 
         <div id="chartDisplay" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </div>
 
     <script>
         const zodiac = [
-            { name: "Aries", abbr: "ari", lord: "Mars" }, { name: "Taurus", abbr: "tau", lord: "Venus" },
-            { name: "Gemini", abbr: "gem", lord: "Mercury" }, { name: "Cancer", abbr: "can", lord: "Moon" },
-            { name: "Leo", abbr: "leo", lord: "Sun" }, { name: "Virgo", abbr: "vir", lord: "Mercury" },
-            { name: "Libra", abbr: "lib", lord: "Venus" }, { name: "Scorpio", abbr: "sco", lord: "Mars" },
-            { name: "Sagittarius", abbr: "sag", lord: "Jupiter" }, { name: "Capricorn", abbr: "cap", lord: "Saturn" },
-            { name: "Aquarius", abbr: "aqu", lord: "Saturn" }, { name: "Pisces", abbr: "pis", lord: "Jupiter" }
+            { name: "Aries", abbr: "Ari", lord: "Mars", purpose: "Efforts & Skills" },
+            { name: "Taurus", abbr: "Tau", lord: "Venus", purpose: "Property & Peace" },
+            { name: "Gemini", abbr: "Gem", lord: "Mercury", purpose: "Intelligence & Romance" },
+            { name: "Cancer", abbr: "Can", lord: "Moon", purpose: "Health & Service" },
+            { name: "Leo", abbr: "Leo", lord: "Sun", purpose: "Partnership & Marriage" },
+            { name: "Virgo", abbr: "Vir", lord: "Mercury", purpose: "Longevity & Secrets" },
+            { name: "Libra", abbr: "Lib", lord: "Venus", purpose: "Wisdom & Higher Travel" },
+            { name: "Scorpio", abbr: "Sco", lord: "Mars", purpose: "Career & Status" },
+            { name: "Sagittarius", abbr: "Sag", lord: "Jupiter", purpose: "Gains & Fulfillment" },
+            { name: "Capricorn", abbr: "Cap", lord: "Saturn", purpose: "Spiritual & Expenses" },
+            { name: "Aquarius", abbr: "Aqu", lord: "Saturn", purpose: "Self & Identity" },
+            { name: "Pisces", abbr: "Pis", lord: "Jupiter", purpose: "Wealth & Family" }
         ];
 
-        const planets = ["Sun", "Mon", "Mar", "Mer", "Jup", "Ven", "Sat", "Rah", "Ket"];
+        const relationships = {
+            "Sun": { friends: ["Moon", "Mars", "Jupiter"], enemies: ["Venus", "Saturn"] },
+            "Mon": { friends: ["Sun", "Mercury"], enemies: [] },
+            "Mar": { friends: ["Sun", "Moon", "Jupiter"], enemies: ["Mercury"] },
+            "Mer": { friends: ["Sun", "Venus"], enemies: ["Moon"] },
+            "Jup": { friends: ["Sun", "Moon", "Mars"], enemies: ["Mercury", "Venus"] },
+            "Ven": { friends: ["Mercury", "Saturn"], enemies: ["Sun", "Moon"] },
+            "Sat": { friends: ["Mercury", "Venus"], enemies: ["Sun", "Moon", "Mars"] },
+            "Rah": { friends: ["Venus", "Saturn", "Mercury"], enemies: ["Sun", "Moon"] },
+            "Ket": { friends: ["Mars", "Sun", "Jupiter"], enemies: ["Mercury", "Venus"] }
+        };
+
+        // Extracted data from your uploaded AstroSage image
+        const natalPlanets = [
+            { p: "Sun", sign: "Taurus", deg: 15.18 },
+            { p: "Mon", sign: "Capricorn", deg: 0.44 },
+            { p: "Mar", sign: "Taurus", deg: 16.14 },
+            { p: "Mer", sign: "Aries", deg: 23.84 },
+            { p: "Jup", sign: "Scorpio", deg: 12.09 },
+            { p: "Ven", sign: "Gemini", deg: 29.68 },
+            { p: "Sat", sign: "Libra", deg: 4.91 },
+            { p: "Rah", sign: "Gemini", deg: 2.30 },
+            { p: "Ket", sign: "Sagittarius", deg: 2.30 }
+        ];
 
         function getStrength(deg) {
-            const d = parseFloat(deg);
-            if (d >= 12 && d <= 18) return { label: "Youth (100%)", class: "tag-youth", width: "100%", color: "#10b981" };
-            if (d > 6 && d < 12 || d > 18 && d < 24) return { label: "Adolescent (50%)", class: "tag-infant", width: "50%", color: "#6366f1" };
-            if (d <= 6) return { label: "Infant (25%)", class: "tag-infant", width: "25%", color: "#818cf8" };
-            return { label: "Dead/Old (0%)", class: "tag-dead", width: "10%", color: "#ef4444" };
+            if (deg >= 12 && deg <= 18) return { l: "Youth (100%)", w: "100%", c: "#10b981" };
+            if (deg > 6 && deg < 24) return { l: "Adolescent (50%)", w: "50%", c: "#6366f1" };
+            return { l: "Weak (10%)", w: "15%", c: "#ef4444" };
         }
 
-        document.getElementById('chartUpload').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            document.getElementById('loading').style.display = 'flex';
-            const { data: { text } } = await Tesseract.recognize(file, 'eng');
-            document.getElementById('loading').style.display = 'none';
-            processData(text.toLowerCase());
-        });
+        function render() {
+            const ascName = "Aquarius"; // Based on your "Lag: Aqu" image
+            const startIdx = zodiac.findIndex(z => z.name === ascName);
+            const container = document.getElementById('chartDisplay');
 
-        function processData(text)
+            for (let i = 0; i < 12; i++) {
+                const sign = zodiac[(startIdx + i) % 12];
+                const housePlanets = natalPlanets.filter(p => p.sign === sign.name);
+                
+                let planetHtml = housePlanets.map(p => {
+                    const rel = relationships[p.p];
+                    const strength = getStrength(p.deg);
+                    let aff = "Neutral";
+                    let affClass = "tag-neutral";
+
+                    if (sign.lord === p.p) { aff = "Own Sign"; affClass = "tag-own"; }
+                    else if (rel.friends.includes(sign.lord)) { aff = "Friend's Sign"; affClass = "tag-friend"; }
+                    else if (rel.enemies.includes(sign.lord)) { aff = "Enemy's Sign"; affClass = "tag-enemy"; }
+
+                    return `
+                        <div class="planet-row">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold text-sky-400">${p.p}</span>
+                                <span class="tag ${affClass}">${aff}</span>
+                            </div>
+                            <div class="flex justify-between items-end">
+                                <span class="text-[10px] text-slate-500 font-bold uppercase">${strength.l}</span>
+                                <span class="text-[10px] text-slate-400">${p.deg}°</span>
+                            </div>
+                            <div class="strength-bar"><div class="strength-fill" style="width:${strength.w}; background:${strength.c}"></div></div>
+                        </div>`;
+                }).join('');
+
+                container.innerHTML += `
+                    <div class="house-card p-6">
+                        <div class="flex justify-between mb-4">
+                            <h3 class="font-black text-xl">HOUSE ${i+1}</h3>
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">${sign.name}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mb-4 italic">"${sign.purpose}"</p>
+                        <div class="space-y-3">${planetHtml || '<p class="text-xs text-slate-600">No Planets</p>'}</div>
+                        <div class="mt-4 pt-4 border-t border-slate-800 text-[10px] text-slate-500 font-bold">LORD: ${sign.lord}</div>
+                    </div>`;
+            }
+        }
+        render();
+    </script>
+</body>
+</html>
