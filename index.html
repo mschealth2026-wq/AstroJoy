@@ -3,87 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AstroVision AI - Live Transits</title>
+    <title>AstroVision AI - Fix Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src='https://unpkg.com/tesseract.js@v4.0.1/dist/tesseract.min.js'></script>
     <style>
         body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; }
-        .house-card { background: #1e293b; border: 1px solid #334155; position: relative; overflow: hidden; }
-        .transit-badge { background: #f59e0b; color: #451a03; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; position: absolute; top: 10px; right: 10px; }
-        .planet-row { background: #0f172a; border-radius: 8px; padding: 8px; margin-bottom: 6px; border-left: 3px solid #38bdf8; }
-        .tag { font-size: 10px; font-weight: bold; padding: 2px 5px; border-radius: 4px; }
-        .tag-friend { background: #065f46; color: #34d399; }
-        .tag-enemy { background: #7f1d1d; color: #f87171; }
-        .spinner { border: 3px solid rgba(255, 255, 255, 0.1); border-left-color: #38bdf8; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        .house-card { background: #1e293b; border: 1px solid #334155; }
+        .transit-badge { background: #f59e0b; color: #451a03; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+        .spinner { border: 3px solid rgba(255, 255, 255, 0.1); border-left-color: #38bdf8; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="p-4 md:p-8">
-    <div class="max-w-6xl mx-auto">
-        <header class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-sky-400 mb-2">AstroVision Live</h1>
-            <p class="text-slate-400">January 30, 2026 • Natal Analysis + Live Transits</p>
+<body class="p-4 md:p-10">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-extrabold text-sky-400 mb-2">AstroVision AI</h1>
+            <p class="text-slate-400">January 30, 2026 • Live Transit Analysis</p>
         </header>
 
-        <div class="bg-slate-800 p-8 rounded-2xl border-2 border-dashed border-slate-600 text-center mb-8">
-            <input type="file" id="chartUpload" accept="image/*" class="hidden">
-            <label for="chartUpload" class="cursor-pointer bg-sky-600 hover:bg-sky-500 px-8 py-4 rounded-xl font-bold transition inline-block">
-                📷 Upload Birth Table
-            </label>
-            <div id="loading" class="hidden mt-6 flex flex-col items-center">
-                <div class="spinner mb-2"></div>
-                <p class="text-sky-400">Syncing Live Planetary Movements...</p>
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-10">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                    <h3 class="text-sm font-bold text-sky-400 uppercase tracking-widest mb-4">Step 1: Scan</h3>
+                    <input type="file" id="chartUpload" class="hidden" accept="image/*">
+                    <label for="chartUpload" class="w-full text-center cursor-pointer bg-sky-600 hover:bg-sky-500 py-3 rounded-lg font-bold block transition">
+                        📷 Upload Chart
+                    </label>
+                    <div id="loading" class="hidden mt-4 flex items-center gap-2 text-sky-400 text-sm">
+                        <div class="spinner"></div> Reading data...
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                    <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Or Select Manually</h3>
+                    <select id="manualSign" onchange="generateChart(this.value)" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-white">
+                        <option value="">Select Ascendant...</option>
+                        <option value="Aries">Aries</option><option value="Taurus">Taurus</option>
+                        <option value="Gemini">Gemini</option><option value="Cancer">Cancer</option>
+                        <option value="Leo">Leo</option><option value="Virgo">Virgo</option>
+                        <option value="Libra">Libra</option><option value="Scorpio">Scorpio</option>
+                        <option value="Sagittarius">Sagittarius</option><option value="Capricorn">Capricorn</option>
+                        <option value="Aquarius">Aquarius</option><option value="Pisces">Pisces</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="lg:col-span-3">
+                <div id="chartDisplay" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <div class="col-span-full py-20 text-center text-slate-500 border-2 border-dashed border-slate-800 rounded-3xl">
+                        Upload an image or select a sign to begin analysis.
+                    </div>
+                </div>
             </div>
         </div>
-
-        <div id="chartDisplay" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </div>
 
     <script>
         const zodiac = [
-            { name: "Aries", lord: "Mars", theme: "Self & Energy" },
-            { name: "Taurus", lord: "Venus", theme: "Wealth & Speech" },
-            { name: "Gemini", lord: "Mercury", theme: "Skills & Siblings" },
-            { name: "Cancer", lord: "Moon", theme: "Home & Emotions" },
-            { name: "Leo", lord: "Sun", theme: "Creativity & Children" },
-            { name: "Virgo", lord: "Mercury", theme: "Service & Health" },
-            { name: "Libra", lord: "Venus", theme: "Partnership & Marriage" },
-            { name: "Scorpio", lord: "Mars", theme: "Secrets & Longevity" },
-            { name: "Sagittarius", lord: "Jupiter", theme: "Luck & Higher Wisdom" },
-            { name: "Capricorn", lord: "Saturn", theme: "Career & Status" },
-            { name: "Aquarius", lord: "Saturn", theme: "Gains & Social Network" },
-            { name: "Pisces", lord: "Jupiter", theme: "Spirituality & Loss" }
+            { name: "Aries", lord: "Mars", house: "Identity & Body" },
+            { name: "Taurus", lord: "Venus", house: "Wealth & Family" },
+            { name: "Gemini", lord: "Mercury", house: "Efforts & Siblings" },
+            { name: "Cancer", lord: "Moon", house: "Happiness & Mother" },
+            { name: "Leo", lord: "Sun", house: "Intelligence & Children" },
+            { name: "Virgo", lord: "Mercury", house: "Debt, Health & Enemies" },
+            { name: "Libra", lord: "Venus", house: "Marriage & Partners" },
+            { name: "Scorpio", lord: "Mars", house: "Life & Transformations" },
+            { name: "Sagittarius", lord: "Jupiter", house: "Luck & Wisdom" },
+            { name: "Capricorn", lord: "Saturn", house: "Career & Karma" },
+            { name: "Aquarius", lord: "Saturn", house: "Gains & Income" },
+            { name: "Pisces", lord: "Jupiter", house: "Expenditure & Solitude" }
         ];
 
-        // Current transits as of Jan 30, 2026
-        const liveTransits = [
-            { p: "Sun", sign: "Aquarius", stay: "1 Month" },
-            { p: "Moon", sign: "Cancer", stay: "2.5 Days" },
-            { p: "Mars", sign: "Capricorn", stay: "1.5 Months" },
-            { p: "Jupiter", sign: "Gemini", stay: "1 Year" },
-            { p: "Saturn", sign: "Pisces", stay: "2.5 Years" },
-            { p: "Venus", sign: "Capricorn", stay: "1 Month" },
-            { p: "Mercury", sign: "Capricorn", stay: "3 Weeks" },
-            { p: "Rahu", sign: "Aquarius", stay: "1.5 Years" },
-            { p: "Ketu", sign: "Leo", stay: "1.5 Years" }
+        // Transit Positions for Jan 30, 2026
+        const transits = [
+            { p: "Sun", sign: "Aquarius", time: "Feb 15" },
+            { p: "Saturn", sign: "Pisces", time: "Year 2027" },
+            { p: "Jupiter", sign: "Gemini", time: "Oct 2026" },
+            { p: "Mars", sign: "Capricorn", time: "March 2026" }
         ];
 
         document.getElementById('chartUpload').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
             document.getElementById('loading').style.display = 'flex';
+            
             const { data: { text } } = await Tesseract.recognize(file, 'eng');
             document.getElementById('loading').style.display = 'none';
-            parseChart(text.toLowerCase());
+            
+            const cleanText = text.toLowerCase();
+            const found = zodiac.find(z => cleanText.includes(z.name.toLowerCase().substring(0,3)));
+            
+            if (found) {
+                document.getElementById('manualSign').value = found.name;
+                generateChart(found.name);
+            } else {
+                alert("Scanner couldn't find the sign. Please select it manually below!");
+            }
         });
 
-        function parseChart(rawText) {
-            const text = rawText.replace(/\n/g, " ");
-            const lagMatch = text.match(/lag\D*(\w{3})/);
-            if (!lagMatch) return alert("Lagna not found.");
-            
-            const ascSign = zodiac.find(z => z.name.toLowerCase().startsWith(lagMatch[1]));
-            const planetsFound = [];
-            ["sun", "mon", "mar", "mer", "jup", "ven", "sat", "rah", "ket"].forEach(p => {
-                const regex = new RegExp(`${p}\\D*(\\w{3})\\s*(\\d+)`, 'g');
-                let
+        function generateChart(ascName) {
+            if (!ascName) return;
+            const startIdx = zodiac.findIndex(z => z.name === ascName);
+            const container = document.getElementById('chartDisplay');
+            container.innerHTML = '';
+
+            for (let i = 0; i < 12; i++) {
+                const sign = zodiac[(startIdx + i) % 12];
+                const activeTransits = transits.filter(t => t.sign === sign.name);
+                
+                container.innerHTML += `
+                    <div class="house-card p-6 rounded-2xl">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 class="text-sky-400 font-black text-xl">HOUSE ${i + 1}</h4>
+                                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">${sign.name}</span>
+                            </div>
+                            <span class="text-xs bg-slate-800 px-2 py-1 rounded text-slate-400">Lord: ${sign.lord}</span>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <p class="text-white text-sm font-semibold">${sign.house}</p>
+                        </div>
+
+                        <div class="space-y-2 mt-4 pt-4 border-t border-slate-700/50">
+                            ${activeTransits.map(t => `
+                                <div class="flex justify-between items-center">
+                                    <span class="transit-badge">🚀 ${t.p} TRANSIT</span>
+                                    <span class="text-[9px] text-slate-500 italic">Until ${t.time}</span>
+                                </div>
+                            `).join('') || '<p class="text-[10px] text-slate-600">No active movements here</p>'}
+                        </div>
+                    </div>`;
+            }
+        }
+    </script>
+</body>
+</html>
