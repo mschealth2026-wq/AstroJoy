@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AstroVision AI - Advanced Analyzer</title>
+    <title>AstroVision AI - Live Transits</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src='https://unpkg.com/tesseract.js@v4.0.1/dist/tesseract.min.js'></script>
     <style>
         body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; }
-        .house-card { background: #1e293b; border: 1px solid #334155; }
+        .house-card { background: #1e293b; border: 1px solid #334155; position: relative; overflow: hidden; }
+        .transit-badge { background: #f59e0b; color: #451a03; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; position: absolute; top: 10px; right: 10px; }
         .planet-row { background: #0f172a; border-radius: 8px; padding: 8px; margin-bottom: 6px; border-left: 3px solid #38bdf8; }
-        .tag { font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+        .tag { font-size: 10px; font-weight: bold; padding: 2px 5px; border-radius: 4px; }
         .tag-friend { background: #065f46; color: #34d399; }
         .tag-enemy { background: #7f1d1d; color: #f87171; }
-        .tag-neutral { background: #334155; color: #94a3b8; }
-        .age-tag { background: #1e1b4b; color: #818cf8; border: 1px solid #4338ca; }
         .spinner { border: 3px solid rgba(255, 255, 255, 0.1); border-left-color: #38bdf8; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
@@ -22,18 +21,18 @@
 <body class="p-4 md:p-8">
     <div class="max-w-6xl mx-auto">
         <header class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-sky-400 mb-2">AstroVision Pro</h1>
-            <p class="text-slate-400">Deep Scan: Planet Age (Avastha) & Affinity</p>
+            <h1 class="text-4xl font-bold text-sky-400 mb-2">AstroVision Live</h1>
+            <p class="text-slate-400">January 30, 2026 • Natal Analysis + Live Transits</p>
         </header>
 
         <div class="bg-slate-800 p-8 rounded-2xl border-2 border-dashed border-slate-600 text-center mb-8">
             <input type="file" id="chartUpload" accept="image/*" class="hidden">
             <label for="chartUpload" class="cursor-pointer bg-sky-600 hover:bg-sky-500 px-8 py-4 rounded-xl font-bold transition inline-block">
-                ✨ Scan AstroSage Image
+                📷 Upload Birth Table
             </label>
             <div id="loading" class="hidden mt-6 flex flex-col items-center">
                 <div class="spinner mb-2"></div>
-                <p class="text-sky-400">Calculating Avasthas & Maitri...</p>
+                <p class="text-sky-400">Syncing Live Planetary Movements...</p>
             </div>
         </div>
 
@@ -42,31 +41,32 @@
 
     <script>
         const zodiac = [
-            { name: "Aries", type: "odd", lord: "Mars" }, { name: "Taurus", type: "even", lord: "Venus" },
-            { name: "Gemini", type: "odd", lord: "Mercury" }, { name: "Cancer", type: "even", lord: "Moon" },
-            { name: "Leo", type: "odd", lord: "Sun" }, { name: "Virgo", type: "even", lord: "Mercury" },
-            { name: "Libra", type: "odd", lord: "Venus" }, { name: "Scorpio", type: "even", lord: "Mars" },
-            { name: "Sagittarius", type: "odd", lord: "Jupiter" }, { name: "Capricorn", type: "even", lord: "Saturn" },
-            { name: "Aquarius", type: "odd", lord: "Saturn" }, { name: "Pisces", type: "even", lord: "Jupiter" }
+            { name: "Aries", lord: "Mars", theme: "Self & Energy" },
+            { name: "Taurus", lord: "Venus", theme: "Wealth & Speech" },
+            { name: "Gemini", lord: "Mercury", theme: "Skills & Siblings" },
+            { name: "Cancer", lord: "Moon", theme: "Home & Emotions" },
+            { name: "Leo", lord: "Sun", theme: "Creativity & Children" },
+            { name: "Virgo", lord: "Mercury", theme: "Service & Health" },
+            { name: "Libra", lord: "Venus", theme: "Partnership & Marriage" },
+            { name: "Scorpio", lord: "Mars", theme: "Secrets & Longevity" },
+            { name: "Sagittarius", lord: "Jupiter", theme: "Luck & Higher Wisdom" },
+            { name: "Capricorn", lord: "Saturn", theme: "Career & Status" },
+            { name: "Aquarius", lord: "Saturn", theme: "Gains & Social Network" },
+            { name: "Pisces", lord: "Jupiter", theme: "Spirituality & Loss" }
         ];
 
-        const relationships = {
-            "Sun": { friends: ["Moon", "Mars", "Jupiter"], enemies: ["Venus", "Saturn"] },
-            "Moon": { friends: ["Sun", "Mercury"], enemies: [] },
-            "Mars": { friends: ["Sun", "Moon", "Jupiter"], enemies: ["Mercury"] },
-            "Mercury": { friends: ["Sun", "Venus"], enemies: ["Moon"] },
-            "Jupiter": { friends: ["Sun", "Moon", "Mars"], enemies: ["Mercury", "Venus"] },
-            "Venus": { friends: ["Mercury", "Saturn"], enemies: ["Sun", "Moon"] },
-            "Saturn": { friends: ["Mercury", "Venus"], enemies: ["Sun", "Moon", "Mars"] }
-        };
-
-        function getAvastha(deg, type) {
-            const d = parseFloat(deg);
-            const stages = ["Infant (25%)", "Adolescent (50%)", "Youth (100%)", "Old Age (Low)", "Dead (0%)"];
-            let idx = Math.floor(d / 6);
-            if (type === "even") idx = 4 - idx; 
-            return stages[idx] || "Youth";
-        }
+        // Current transits as of Jan 30, 2026
+        const liveTransits = [
+            { p: "Sun", sign: "Aquarius", stay: "1 Month" },
+            { p: "Moon", sign: "Cancer", stay: "2.5 Days" },
+            { p: "Mars", sign: "Capricorn", stay: "1.5 Months" },
+            { p: "Jupiter", sign: "Gemini", stay: "1 Year" },
+            { p: "Saturn", sign: "Pisces", stay: "2.5 Years" },
+            { p: "Venus", sign: "Capricorn", stay: "1 Month" },
+            { p: "Mercury", sign: "Capricorn", stay: "3 Weeks" },
+            { p: "Rahu", sign: "Aquarius", stay: "1.5 Years" },
+            { p: "Ketu", sign: "Leo", stay: "1.5 Years" }
+        ];
 
         document.getElementById('chartUpload').addEventListener('change', async (e) => {
             const file = e.target.files[0];
@@ -84,63 +84,6 @@
             
             const ascSign = zodiac.find(z => z.name.toLowerCase().startsWith(lagMatch[1]));
             const planetsFound = [];
-            const pKeys = ["sun", "mon", "mar", "mer", "jup", "ven", "sat", "rah", "ket"];
-
-            pKeys.forEach(p => {
+            ["sun", "mon", "mar", "mer", "jup", "ven", "sat", "rah", "ket"].forEach(p => {
                 const regex = new RegExp(`${p}\\D*(\\w{3})\\s*(\\d+)`, 'g');
-                let match;
-                while ((match = regex.exec(text)) !== null) {
-                    const sign = zodiac.find(z => z.name.toLowerCase().startsWith(match[1]));
-                    if (sign) planetsFound.push({ name: p.toUpperCase(), sign: sign.name, deg: match[2], signType: sign.type });
-                }
-            });
-
-            render(ascSign.name, planetsFound);
-        }
-
-        function render(ascName, planetList) {
-            const startIdx = zodiac.findIndex(z => z.name === ascName);
-            const display = document.getElementById('chartDisplay');
-            display.innerHTML = '';
-
-            for (let i = 0; i < 12; i++) {
-                const sign = zodiac[(startIdx + i) % 12];
-                const housePlanets = planetList.filter(p => p.sign === sign.name);
-                
-                let planetsHTML = housePlanets.map(p => {
-                    const rel = relationships[p.name.charAt(0) + p.name.slice(1).toLowerCase()];
-                    let affinity = "Neutral";
-                    if (rel?.friends.includes(sign.lord)) affinity = "Friend's Sign";
-                    if (rel?.enemies.includes(sign.lord)) affinity = "Enemy's Sign";
-                    if (sign.lord === (p.name.charAt(0) + p.name.slice(1).toLowerCase())) affinity = "Own House";
-
-                    const affClass = affinity.includes("Friend") || affinity.includes("Own") ? "tag-friend" : 
-                                   affinity.includes("Enemy") ? "tag-enemy" : "tag-neutral";
-
-                    return `
-                        <div class="planet-row">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="font-bold text-sky-300 text-sm">${p.name}</span>
-                                <span class="tag ${affClass}">${affinity}</span>
-                            </div>
-                            <div class="flex gap-2">
-                                <span class="tag age-tag">${getAvastha(p.deg, p.signType)}</span>
-                                <span class="text-[9px] text-slate-500 self-center">${p.deg}°</span>
-                            </div>
-                        </div>`;
-                }).join('');
-
-                display.innerHTML += `
-                    <div class="house-card p-5 rounded-xl border border-slate-700">
-                        <div class="flex justify-between mb-4">
-                            <span class="text-sky-500 font-bold">House ${i+1}</span>
-                            <span class="text-[10px] bg-slate-800 px-2 py-1 rounded">${sign.name}</span>
-                        </div>
-                        <div class="space-y-2">${planetsHTML || '<p class="text-slate-600 text-xs italic">No Planets</p>'}</div>
-                        <div class="mt-4 pt-3 border-t border-slate-800 text-[10px] text-slate-400">Lord: ${sign.lord}</div>
-                    </div>`;
-            }
-        }
-    </script>
-</body>
-</html>
+                let
