@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AstroVision Pro - Aspect Edition</title>
+    <title>AstroVision Pro - Aspect Quality</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; }
-        .house-card { background: #1e293b; border: 1px solid #334155; border-radius: 20px; position: relative; }
+        .house-card { background: #1e293b; border: 1px solid #334155; border-radius: 20px; }
+        .tag { font-size: 9px; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+        .aspect-good { background: #064e3b; color: #34d399; border: 1px solid #059669; }
+        .aspect-bad { background: #450a0a; color: #f87171; border: 1px solid #dc2626; }
         .planet-row { background: #0f172a; border-radius: 12px; padding: 10px; margin-bottom: 8px; border: 1px solid #334155; }
-        .tag { font-size: 9px; font-weight: bold; padding: 2px 5px; border-radius: 4px; text-transform: uppercase; }
-        .tag-aspect { background: #4c1d95; color: #ddd6fe; border: 1px solid #7c3aed; }
-        .tag-friend { background: #064e3b; color: #34d399; }
-        .tag-enemy { background: #7f1d1d; color: #f87171; }
         .strength-bar { height: 4px; border-radius: 2px; background: #334155; margin-top: 6px; overflow: hidden; }
         .strength-fill { height: 100%; transition: width 0.5s; }
     </style>
@@ -20,8 +19,8 @@
 <body class="p-6 md:p-10">
     <div class="max-w-7xl mx-auto">
         <header class="mb-10 text-center">
-            <h1 class="text-4xl font-black text-sky-400 mb-2">AstroVision AI</h1>
-            <p class="text-slate-400 uppercase tracking-widest text-xs font-bold">Planetary Strength & Full Aspect Analysis</p>
+            <h1 class="text-4xl font-black text-sky-400 mb-2">AstroVision Pro</h1>
+            <p class="text-slate-400 uppercase tracking-widest text-xs font-bold">Planetary Aspect Quality Analysis</p>
         </header>
 
         <div id="chartDisplay" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
@@ -37,45 +36,45 @@
             { name: "Aquarius", lord: "Sat" }, { name: "Pisces", lord: "Jup" }
         ];
 
-        // Your Chart Data from AstroSage
         const planetData = [
-            { p: "Sun", sign: "Taurus", deg: 15.11, house: 4 },
-            { p: "Mon", sign: "Capricorn", deg: 0.26, house: 12 },
-            { p: "Mar", sign: "Taurus", deg: 16.08, house: 4 },
-            { p: "Mer", sign: "Aries", deg: 23.50, house: 3 },
-            { p: "Jup", sign: "Scorpio", deg: 12.05, house: 10 },
-            { p: "Ven", sign: "Gemini", deg: 29.41, house: 5 },
-            { p: "Sat", sign: "Libra", deg: 4.54, house: 9 },
-            { p: "Rah", sign: "Gemini", deg: 2.18, house: 5 },
-            { p: "Ket", sign: "Sagittarius", deg: 2.18, house: 11 }
+            { p: "Sun", sign: "Taurus", deg: 15.11, house: 4, nature: "Malefic" },
+            { p: "Mon", sign: "Capricorn", deg: 0.26, house: 12, nature: "Benefic" },
+            { p: "Mar", sign: "Taurus", deg: 16.08, house: 4, nature: "Malefic" },
+            { p: "Mer", sign: "Aries", deg: 23.50, house: 3, nature: "Benefic" },
+            { p: "Jup", sign: "Scorpio", deg: 12.05, house: 10, nature: "Benefic" },
+            { p: "Ven", sign: "Gemini", deg: 29.41, house: 5, nature: "Benefic" },
+            { p: "Sat", sign: "Libra", deg: 4.54, house: 9, nature: "Malefic" },
+            { p: "Rah", sign: "Gemini", deg: 2.18, house: 5, nature: "Malefic" },
+            { p: "Ket", sign: "Sagittarius", deg: 2.18, house: 11, nature: "Malefic" }
         ];
 
         function getStrength(deg) {
             if (deg >= 12 && deg <= 18) return { l: "Youth (100%)", w: "100%", c: "#10b981" };
-            if (deg > 6 && deg < 24) return { l: "Adolescent (50%)", w: "50%", c: "#6366f1" };
-            return { l: "Weak (10%)", w: "20%", c: "#ef4444" };
+            return { l: "Partial Strength", w: "40%", c: "#6366f1" };
         }
 
-        function calculateAspects(houseNum) {
-            let aspectingPlanets = [];
+        function calculateAspects(houseNum, houseLord) {
+            let aspects = [];
             planetData.forEach(p => {
-                let p_house = p.house;
-                let diff = (houseNum - p_house + 12) % 12;
-                if (diff === 0) diff = 12; // Adjusted for 1-based indexing
+                let diff = (houseNum - p.house + 12) % 12;
+                if (diff === 0) diff = 12;
                 
                 let isAspecting = false;
-                // All planets aspect the 7th house
                 if (diff === 7) isAspecting = true;
-                // Special Mars aspects
                 if (p.p === "Mar" && (diff === 4 || diff === 8)) isAspecting = true;
-                // Special Jupiter/Rahu/Ketu aspects
                 if (["Jup", "Rah", "Ket"].includes(p.p) && (diff === 5 || diff === 9)) isAspecting = true;
-                // Special Saturn aspects
                 if (p.p === "Sat" && (diff === 3 || diff === 10)) isAspecting = true;
 
-                if (isAspecting) aspectingPlanets.push(p.p);
+                if (isAspecting) {
+                    // Jupiter aspect is always good. Others depend on nature.
+                    let quality = (p.p === "Jup" || p.nature === "Benefic") ? "Good" : "Challenging";
+                    // If a malefic aspects its own house, it becomes Good
+                    if (p.nature === "Malefic" && houseLord === p.p) quality = "Good (Protective)";
+                    
+                    aspects.push({ name: p.p, quality: quality });
+                }
             });
-            return aspectingPlanets;
+            return aspects;
         }
 
         function render() {
@@ -87,22 +86,22 @@
                 const houseNum = i + 1;
                 const sign = zodiac[(startIdx + i) % 12];
                 const housePlanets = planetData.filter(p => p.house === houseNum);
-                const aspecting = calculateAspects(houseNum);
+                const aspects = calculateAspects(houseNum, sign.lord);
 
                 container.innerHTML += `
                     <div class="house-card p-5">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-black text-xl text-sky-400">HOUSE ${houseNum}</h3>
-                            <span class="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">${sign.name}</span>
+                            <h3 class="font-black text-xl text-sky-400">H${houseNum}</h3>
+                            <span class="text-[9px] font-bold text-slate-500 uppercase">${sign.name}</span>
                         </div>
 
-                        <div class="mb-4">
-                            <h4 class="text-[9px] text-slate-500 font-bold uppercase mb-2 tracking-widest">Planets Inside</h4>
+                        <div class="mb-4 space-y-2">
+                            <h4 class="text-[8px] text-slate-500 font-bold uppercase tracking-widest">Planets Inside</h4>
                             ${housePlanets.map(p => `
                                 <div class="planet-row">
-                                    <div class="flex justify-between items-center">
-                                        <span class="font-bold text-white text-sm">${p.p}</span>
-                                        <span class="text-[9px] text-slate-400">${getStrength(p.deg).l}</span>
+                                    <div class="flex justify-between items-center text-xs">
+                                        <span class="font-bold">${p.p}</span>
+                                        <span>${p.deg}°</span>
                                     </div>
                                     <div class="strength-bar"><div class="strength-fill" style="width:${getStrength(p.deg).w}; background:${getStrength(p.deg).c}"></div></div>
                                 </div>
@@ -110,13 +109,16 @@
                         </div>
 
                         <div>
-                            <h4 class="text-[9px] text-violet-400 font-bold uppercase mb-2 tracking-widest">Under Aspect Of</h4>
-                            <div class="flex flex-wrap gap-2">
-                                ${aspecting.map(p => `<span class="tag tag-aspect">👁️ ${p}</span>`).join('') || '<span class="text-[10px] text-slate-700 italic">No aspects</span>'}
+                            <h4 class="text-[8px] text-slate-500 font-bold uppercase tracking-widest mb-2">Aspect Impacts</h4>
+                            <div class="space-y-2">
+                                ${aspects.map(a => `
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-[10px] font-medium">👁️ ${a.name}</span>
+                                        <span class="tag ${a.quality === 'Good' || a.quality.includes('Good') ? 'aspect-good' : 'aspect-bad'}">${a.quality}</span>
+                                    </div>
+                                `).join('') || '<p class="text-[10px] text-slate-700 italic">No aspects</p>'}
                             </div>
                         </div>
-                        
-                        <div class="mt-6 pt-3 border-t border-slate-800 text-[10px] text-center text-slate-600 font-bold">RULER: ${sign.lord}</div>
                     </div>`;
             }
         }
