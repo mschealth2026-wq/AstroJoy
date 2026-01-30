@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AstroVision Pro - Aspect Quality</title>
+    <title>AstroVision Pro - Live Transits & Purpose</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; }
-        .house-card { background: #1e293b; border: 1px solid #334155; border-radius: 20px; }
+        .house-card { background: #1e293b; border: 1px solid #334155; border-radius: 24px; padding: 24px; position: relative; }
         .tag { font-size: 9px; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
         .aspect-good { background: #064e3b; color: #34d399; border: 1px solid #059669; }
         .aspect-bad { background: #450a0a; color: #f87171; border: 1px solid #dc2626; }
+        .transit-badge { background: #f59e0b; color: #451a03; border-radius: 99px; padding: 2px 8px; font-size: 9px; font-weight: 800; }
         .planet-row { background: #0f172a; border-radius: 12px; padding: 10px; margin-bottom: 8px; border: 1px solid #334155; }
         .strength-bar { height: 4px; border-radius: 2px; background: #334155; margin-top: 6px; overflow: hidden; }
         .strength-fill { height: 100%; transition: width 0.5s; }
@@ -18,25 +19,31 @@
 </head>
 <body class="p-6 md:p-10">
     <div class="max-w-7xl mx-auto">
-        <header class="mb-10 text-center">
+        <header class="mb-12 text-center">
             <h1 class="text-4xl font-black text-sky-400 mb-2">AstroVision Pro</h1>
-            <p class="text-slate-400 uppercase tracking-widest text-xs font-bold">Planetary Aspect Quality Analysis</p>
+            <p class="text-slate-400 uppercase tracking-widest text-xs font-bold">Live Transits: Jan 30, 2026 • Aquarius Ascendant</p>
         </header>
 
-        <div id="chartDisplay" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+        <div id="chartDisplay" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
     </div>
 
     <script>
         const zodiac = [
-            { name: "Aries", lord: "Mar" }, { name: "Taurus", lord: "Ven" },
-            { name: "Gemini", lord: "Mer" }, { name: "Cancer", lord: "Mon" },
-            { name: "Leo", lord: "Sun" }, { name: "Virgo", lord: "Mer" },
-            { name: "Libra", lord: "Ven" }, { name: "Scorpio", lord: "Mar" },
-            { name: "Sagittarius", lord: "Jup" }, { name: "Capricorn", lord: "Sat" },
-            { name: "Aquarius", lord: "Sat" }, { name: "Pisces", lord: "Jup" }
+            { name: "Aries", lord: "Mar", purpose: "Short Travel, Courage, Siblings" },
+            { name: "Taurus", lord: "Ven", purpose: "Mother, Vehicles, Inner Happiness" },
+            { name: "Gemini", lord: "Mer", purpose: "Education, Children, Creativity" },
+            { name: "Cancer", lord: "Mon", purpose: "Enemies, Health, Daily Debt" },
+            { name: "Leo", lord: "Sun", purpose: "Marriage, Spouse, Partnership" },
+            { name: "Virgo", lord: "Mer", purpose: "Research, Obstacles, Longevity" },
+            { name: "Libra", lord: "Ven", purpose: "Higher Wisdom, Luck, Religion" },
+            { name: "Scorpio", lord: "Mar", purpose: "Career, Fame, Public Status" },
+            { name: "Sagittarius", lord: "Jup", purpose: "Gains, Social Circles, Desires" },
+            { name: "Capricorn", lord: "Sat", purpose: "Spirituality, Loss, Isolation" },
+            { name: "Aquarius", lord: "Sat", purpose: "Self, Physicality, Life Focus" },
+            { name: "Pisces", lord: "Jup", purpose: "Wealth, Family, Speech" }
         ];
 
-        const planetData = [
+        const natalPlanets = [
             { p: "Sun", sign: "Taurus", deg: 15.11, house: 4, nature: "Malefic" },
             { p: "Mon", sign: "Capricorn", deg: 0.26, house: 12, nature: "Benefic" },
             { p: "Mar", sign: "Taurus", deg: 16.08, house: 4, nature: "Malefic" },
@@ -48,33 +55,39 @@
             { p: "Ket", sign: "Sagittarius", deg: 2.18, house: 11, nature: "Malefic" }
         ];
 
+        const liveTransits = [
+            { p: "Saturn", sign: "Pisces", house: 2, nature: "Malefic" },
+            { p: "Jupiter", sign: "Gemini", house: 5, nature: "Benefic" },
+            { p: "Sun", sign: "Aquarius", house: 1, nature: "Malefic" },
+            { p: "Mars", sign: "Capricorn", house: 12, nature: "Malefic" }
+        ];
+
         function getStrength(deg) {
             if (deg >= 12 && deg <= 18) return { l: "Youth (100%)", w: "100%", c: "#10b981" };
-            return { l: "Partial Strength", w: "40%", c: "#6366f1" };
+            return { l: "Partial Power", w: "45%", c: "#6366f1" };
         }
 
-        function calculateAspects(houseNum, houseLord) {
-            let aspects = [];
-            planetData.forEach(p => {
+        function getAspects(houseNum, currentSignLord) {
+            let combined = [...natalPlanets, ...liveTransits.map(t => ({...t, isTransit: true}))];
+            let results = [];
+
+            combined.forEach(p => {
                 let diff = (houseNum - p.house + 12) % 12;
                 if (diff === 0) diff = 12;
+                let hits = false;
                 
-                let isAspecting = false;
-                if (diff === 7) isAspecting = true;
-                if (p.p === "Mar" && (diff === 4 || diff === 8)) isAspecting = true;
-                if (["Jup", "Rah", "Ket"].includes(p.p) && (diff === 5 || diff === 9)) isAspecting = true;
-                if (p.p === "Sat" && (diff === 3 || diff === 10)) isAspecting = true;
+                if (diff === 7) hits = true;
+                if (p.p === "Mar" || p.p === "Mars" && (diff === 4 || diff === 8)) hits = true;
+                if (["Jup", "Jupiter", "Rah", "Ket"].includes(p.p) && (diff === 5 || diff === 9)) hits = true;
+                if (p.p === "Sat" || p.p === "Saturn" && (diff === 3 || diff === 10)) hits = true;
 
-                if (isAspecting) {
-                    // Jupiter aspect is always good. Others depend on nature.
-                    let quality = (p.p === "Jup" || p.nature === "Benefic") ? "Good" : "Challenging";
-                    // If a malefic aspects its own house, it becomes Good
-                    if (p.nature === "Malefic" && houseLord === p.p) quality = "Good (Protective)";
-                    
-                    aspects.push({ name: p.p, quality: quality });
+                if (hits) {
+                    let quality = (p.p.includes("Jup") || p.nature === "Benefic") ? "Good" : "Harsh";
+                    if (currentSignLord.startsWith(p.p.substring(0,2))) quality = "Good (Protective)";
+                    results.push({ name: p.p, quality, transit: p.isTransit });
                 }
             });
-            return aspects;
+            return results;
         }
 
         function render() {
@@ -85,38 +98,42 @@
             for (let i = 0; i < 12; i++) {
                 const houseNum = i + 1;
                 const sign = zodiac[(startIdx + i) % 12];
-                const housePlanets = planetData.filter(p => p.house === houseNum);
-                const aspects = calculateAspects(houseNum, sign.lord);
+                const housePlanets = natalPlanets.filter(p => p.house === houseNum);
+                const currentMoving = liveTransits.filter(t => t.house === houseNum);
+                const aspects = getAspects(houseNum, sign.lord);
 
                 container.innerHTML += `
-                    <div class="house-card p-5">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-black text-xl text-sky-400">H${houseNum}</h3>
-                            <span class="text-[9px] font-bold text-slate-500 uppercase">${sign.name}</span>
+                    <div class="house-card">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-black text-2xl text-sky-400">HOUSE ${houseNum}</h3>
+                            <span class="text-[10px] font-bold text-slate-500 uppercase">${sign.name}</span>
                         </div>
+                        <p class="text-[10px] text-slate-400 italic mb-6 border-b border-slate-700 pb-2 leading-relaxed">Focus: ${sign.purpose}</p>
 
-                        <div class="mb-4 space-y-2">
-                            <h4 class="text-[8px] text-slate-500 font-bold uppercase tracking-widest">Planets Inside</h4>
-                            ${housePlanets.map(p => `
-                                <div class="planet-row">
-                                    <div class="flex justify-between items-center text-xs">
-                                        <span class="font-bold">${p.p}</span>
-                                        <span>${p.deg}°</span>
-                                    </div>
-                                    <div class="strength-bar"><div class="strength-fill" style="width:${getStrength(p.deg).w}; background:${getStrength(p.deg).c}"></div></div>
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="text-[8px] text-slate-500 font-bold uppercase tracking-widest mb-2">Inside House</h4>
+                                ${housePlanets.map(p => `
+                                    <div class="planet-row">
+                                        <div class="flex justify-between items-center text-xs">
+                                            <span class="font-bold">${p.p}</span>
+                                            <span>${p.deg}°</span>
+                                        </div>
+                                        <div class="strength-bar"><div class="strength-fill" style="width:${getStrength(p.deg).w}; background:${getStrength(p.deg).c}"></div></div>
+                                    </div>`).join('')}
+                                ${currentMoving.map(t => `<div class="mt-2"><span class="transit-badge">🚀 Live: ${t.p}</span></div>`).join('') || ''}
+                                ${housePlanets.length === 0 && currentMoving.length === 0 ? '<p class="text-[10px] text-slate-700 italic">No Planets</p>' : ''}
+                            </div>
+
+                            <div>
+                                <h4 class="text-[8px] text-slate-500 font-bold uppercase tracking-widest mb-2">Aspects Influencing</h4>
+                                <div class="space-y-1.5">
+                                    ${aspects.map(a => `
+                                        <div class="flex justify-between items-center bg-black/20 p-1.5 rounded-lg border border-slate-800">
+                                            <span class="text-[10px] ${a.transit ? 'text-orange-400' : 'text-slate-300'} font-medium">👁️ ${a.name} ${a.transit ? '(T)' : ''}</span>
+                                            <span class="tag ${a.quality.includes('Good') ? 'aspect-good' : 'aspect-bad'}">${a.quality}</span>
+                                        </div>`).join('') || '<p class="text-[10px] text-slate-700 italic">Quiet Zone</p>'}
                                 </div>
-                            `).join('') || '<p class="text-[10px] text-slate-700 italic">Empty</p>'}
-                        </div>
-
-                        <div>
-                            <h4 class="text-[8px] text-slate-500 font-bold uppercase tracking-widest mb-2">Aspect Impacts</h4>
-                            <div class="space-y-2">
-                                ${aspects.map(a => `
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-[10px] font-medium">👁️ ${a.name}</span>
-                                        <span class="tag ${a.quality === 'Good' || a.quality.includes('Good') ? 'aspect-good' : 'aspect-bad'}">${a.quality}</span>
-                                    </div>
-                                `).join('') || '<p class="text-[10px] text-slate-700 italic">No aspects</p>'}
                             </div>
                         </div>
                     </div>`;
